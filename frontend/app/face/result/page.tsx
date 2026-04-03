@@ -272,6 +272,11 @@ const ResultPage = () => {
         </div>
       </div>
 
+      <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center mt-4">
+        본 결과는 재미로 보는 운세이며, 과학적 근거가 없습니다. 결과에 의미를
+        두지 마세요.
+      </p>
+
       {/* 버튼들 (PDF 캡처 영역 밖) */}
       <div className="w-full max-w-4xl flex gap-3 mt-6">
         <button
