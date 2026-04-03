@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 from supabase import create_client
 
 from middleware.auth import get_current_user
-from services.storage import get_image_url
 
 load_dotenv(Path(__file__).parent.parent.parent / ".env")
 
@@ -23,7 +22,10 @@ _supabase = None
 def _get_supabase():
     global _supabase
     if _supabase is None:
-        _supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+        _supabase = create_client(
+            os.getenv("SUPABASE_URL"),
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY", os.getenv("SUPABASE_KEY")),
+        )
     return _supabase
 
 
@@ -66,9 +68,4 @@ async def get_history_detail(history_id: str, user: dict = Depends(get_current_u
     if not result.data:
         raise HTTPException(status_code=404, detail="이력을 찾을 수 없습니다.")
 
-    data = result.data
-    # 이미지 URL이 있으면 signed URL로 변환
-    if data.get("image_url"):
-        data["image_signed_url"] = get_image_url(data["image_url"])
-
-    return data
+    return result.data
