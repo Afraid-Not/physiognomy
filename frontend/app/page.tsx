@@ -146,6 +146,21 @@ const HomePage = () => {
               ))}
             </div>
           </div>
+
+          <div className="flex gap-3 text-xs text-zinc-400 dark:text-zinc-500">
+            <button
+              onClick={() => router.push("/privacy")}
+              className="hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors underline"
+            >
+              개인정보처리방침
+            </button>
+            <button
+              onClick={() => router.push("/terms")}
+              className="hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors underline"
+            >
+              이용약관
+            </button>
+          </div>
         </main>
       </div>
     </AuthGuard>
