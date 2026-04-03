@@ -21,7 +21,7 @@ const NavBar = () => {
         >
           점zip
         </button>
-        {user && (
+        {user ? (
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push("/mypage")}
@@ -36,6 +36,13 @@ const NavBar = () => {
               로그아웃
             </button>
           </div>
+        ) : (
+          <button
+            onClick={() => router.push("/login")}
+            className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+          >
+            로그인
+          </button>
         )}
       </div>
     </nav>
