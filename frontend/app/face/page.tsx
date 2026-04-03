@@ -14,7 +14,7 @@ const FacePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const turnstileRef = useRef<{ reset: () => void }>(null);
+  const turnstileRef = useRef<any>(null);
   const router = useRouter();
   const { getAccessToken } = useAuth();
 

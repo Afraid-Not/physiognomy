@@ -19,7 +19,7 @@ const SajuPage = () => {
   const [loadingStep, setLoadingStep] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileRef = useRef<{ reset: () => void }>(null);
+  const turnstileRef = useRef<any>(null);
   const router = useRouter();
   const { getAccessToken } = useAuth();
 
