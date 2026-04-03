@@ -51,14 +51,14 @@ const LoginPage = () => {
     "w-full h-12 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition-shadow";
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6">
+    <div className="flex flex-col items-center justify-center flex-1 p-6">
       <main className="w-full max-w-sm flex flex-col items-center gap-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
             로그인
           </h1>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-            AI 운세 서비스를 이용하려면 로그인해주세요
+            점.ZIP 서비스를 이용하려면 로그인해주세요
           </p>
         </div>
 

@@ -103,7 +103,7 @@ const ResultPage = () => {
 
   if (!result) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center flex-1">
         <div className="flex flex-col items-center gap-3">
           <svg
             className="w-8 h-8 animate-spin text-zinc-400"
@@ -139,7 +139,10 @@ const ResultPage = () => {
   const rightFeatures = result.features.filter((_, i) => i % 2 === 1);
 
   return (
-    <div className="flex flex-col items-center min-h-screen p-4 bg-zinc-50 dark:bg-zinc-950">
+    <div className="flex flex-col items-center flex-1 p-4">
+      <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-3 text-center">
+        정면 사진이 가장 정확하며, 얼굴 각도에 따라 결과가 다를 수 있습니다
+      </p>
       {/* PDF 캡처 영역 */}
       <div
         ref={reportRef}
@@ -168,20 +171,20 @@ const ResultPage = () => {
             <div className="text-center">
               <div className="flex items-baseline justify-center gap-1">
                 <span className="text-4xl font-bold">
-                  {avgScore.toFixed(1)}
+                  {avgScore.toFixed(2)}
                 </span>
                 <span className="text-zinc-400 text-lg">/10</span>
               </div>
               <p className="text-xs text-zinc-400 mt-1">종합 점수</p>
             </div>
-            {/* 미니 바 차트 */}
-            <div className="w-full space-y-1.5 px-2">
+            {/* 바 차트 */}
+            <div className="w-full space-y-2">
               {result.features.map((f, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="text-[10px] text-zinc-400 w-16 text-right shrink-0 whitespace-nowrap">
+                <div key={i} className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-zinc-400 w-8 text-right shrink-0">
                     {f.category.split(" - ")[0]}
                   </span>
-                  <div className="flex-1 h-1.5 bg-zinc-700 rounded-full">
+                  <div className="flex-1 h-3 bg-zinc-700 rounded-full">
                     <div
                       className="h-full rounded-full"
                       style={{
@@ -190,8 +193,8 @@ const ResultPage = () => {
                       }}
                     />
                   </div>
-                  <span className="text-[10px] text-zinc-400 w-4">
-                    {f.score.toFixed(1)}
+                  <span className="text-[11px] font-mono text-zinc-400 w-6 shrink-0">
+                    {f.score.toFixed(2)}
                   </span>
                 </div>
               ))}
@@ -239,7 +242,7 @@ const ResultPage = () => {
                       {scoreLabel(feature.score)}
                     </span>
                     <span className="text-xs font-mono text-zinc-400">
-                      {feature.score.toFixed(1)}/10
+                      {feature.score.toFixed(2)}/10
                     </span>
                   </div>
                 </div>

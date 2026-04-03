@@ -62,7 +62,7 @@ const SignupPage = () => {
 
   if (success) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-6">
+      <div className="flex flex-col items-center justify-center flex-1 p-6">
         <main className="w-full max-w-sm flex flex-col items-center gap-6 text-center">
           <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
             <svg
@@ -100,7 +100,7 @@ const SignupPage = () => {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6">
+    <div className="flex flex-col items-center justify-center flex-1 p-6">
       <main className="w-full max-w-sm flex flex-col items-center gap-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">

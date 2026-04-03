@@ -157,7 +157,7 @@ const SajuResultPage = () => {
 
   if (!result) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center flex-1">
         <div className="flex flex-col items-center gap-3">
           <svg
             className="w-8 h-8 animate-spin text-zinc-400"
@@ -189,7 +189,7 @@ const SajuResultPage = () => {
   const elements = saju.elements;
 
   return (
-    <div className="flex flex-col items-center min-h-screen p-4 bg-zinc-50 dark:bg-zinc-950">
+    <div className="flex flex-col items-center flex-1 p-4">
       <div
         ref={reportRef}
         className="w-full max-w-4xl bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden"

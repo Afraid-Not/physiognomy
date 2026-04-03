@@ -1,13 +1,17 @@
 FROM python:3.11-slim
 
-# MediaPipe / OpenCV 시스템 의존성
+# MediaPipe / OpenCV 시스템 의존성 (v4)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
     libxrender1 \
-    && rm -rf /var/lib/apt/lists/*
+    libegl1 \
+    libgles2 \
+    libgbm1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && ldconfig
 
 WORKDIR /app
 

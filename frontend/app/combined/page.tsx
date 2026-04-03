@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AuthGuard from "../components/AuthGuard";
-import NavBar from "../components/NavBar";
+
 import { useAuth } from "../hooks/useAuth";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -156,15 +156,18 @@ const CombinedPage = () => {
 
   return (
     <AuthGuard>
-      <NavBar />
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 pt-16">
-        <main className="w-full max-w-md flex flex-col items-center gap-6">
+      <div className="flex flex-col items-center justify-center flex-1 p-6">
+        <main className="w-full flex flex-col items-center gap-6">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">
               종합 분석
             </h1>
             <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-400">
               관상 + 사주를 합쳐 종합 운세를 봅니다
+            </p>
+            <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+              정면 사진이 가장 정확하며, 얼굴 각도에 따라 결과가 다를 수
+              있습니다
             </p>
           </div>
 

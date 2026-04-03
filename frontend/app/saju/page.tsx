@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AuthGuard from "../components/AuthGuard";
-import NavBar from "../components/NavBar";
+
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 
@@ -132,9 +132,8 @@ const SajuPage = () => {
 
   return (
     <AuthGuard>
-      <NavBar />
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 pt-16">
-        <main className="w-full max-w-md flex flex-col items-center gap-8">
+      <div className="flex flex-col items-center justify-center flex-1 p-6">
+        <main className="w-full flex flex-col items-center gap-8">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">
               사주 분석

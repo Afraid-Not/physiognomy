@@ -59,8 +59,8 @@ async def analyze_face(
 
     # Step 4: LLM 분석 생성
     if stream:
-        # SSE 스트리밍
-        def event_stream():
+        # SSE 스트리밍 (async generator)
+        async def event_stream():
             # 먼저 분류 결과를 보내기 (즉시 표시)
             classified = {
                 "type": "classified",
@@ -87,6 +87,16 @@ async def analyze_face(
                             f["score"] = features[i].score
                             f["category"] = f"{features[i].category} - {features[i].label}"
                 yield f"data: {json.dumps({'type': 'done', 'data': parsed}, ensure_ascii=False)}\n\n"
+
+                # 이력 저장
+                image_path = await upload_face_image(user["id"], image_bytes, file.content_type or "image/jpeg")
+                await save_history(
+                    user_id=user["id"],
+                    analysis_type="face",
+                    input_data={},
+                    result_data={**parsed, "hero": hero},
+                    image_url=image_path,
+                )
             except json.JSONDecodeError:
                 yield f"data: {json.dumps({'type': 'error', 'data': 'JSON 파싱 실패'}, ensure_ascii=False)}\n\n"
 

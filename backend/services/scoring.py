@@ -127,14 +127,14 @@ TARGET_TO_CATEGORY = {
 
 def compute_score(target: str, label: str, confidence: float) -> float:
     """
-    분류 결과 → 규칙 기반 점수 (소수점 1자리)
-    기본 점수 + confidence 연속 보정 (-0.5 ~ +0.5)
+    분류 결과 → 규칙 기반 점수 (소수점 2자리)
+    기본 점수 + confidence 연속 보정 (-1.5 ~ +1.5)
     """
     scores = BASE_SCORES.get(target, {})
     base = scores.get(label, 6)
 
-    # confidence 0.0~1.0 → -0.5~+0.5 선형 보정
-    adjustment = (confidence - 0.5) * 1.0
+    # confidence 0.0~1.0 → -1.5~+1.5 선형 보정
+    adjustment = (confidence - 0.5) * 3.0
     adjusted = base + adjustment
 
-    return round(max(1.0, min(10.0, adjusted)), 1)
+    return round(max(1.0, min(10.0, adjusted)), 2)

@@ -64,7 +64,7 @@ async def analyze_saju_endpoint(req: SajuRequest, user: dict = Depends(get_curre
 
     # Step 4: LLM 분석 생성
     if req.stream:
-        def event_stream():
+        async def event_stream():
             # 먼저 사주 원국 + 점수 즉시 전송
             classified = {
                 "type": "classified",
@@ -97,6 +97,18 @@ async def analyze_saju_endpoint(req: SajuRequest, user: dict = Depends(get_curre
                             parsed["scores"][i]["score"] = scores[key]["score"]
                             parsed["scores"][i]["category"] = scores[key]["category"]
                 yield f"data: {json.dumps({'type': 'done', 'data': parsed}, ensure_ascii=False)}\n\n"
+
+                # 이력 저장
+                await save_history(
+                    user_id=user["id"],
+                    analysis_type="saju",
+                    input_data={
+                        "birth_year": req.birth_year, "birth_month": req.birth_month,
+                        "birth_day": req.birth_day, "birth_hour": req.birth_hour,
+                        "gender": req.gender,
+                    },
+                    result_data={"saju": saju_data, "scores": scores, "analysis": parsed, "hero": hero},
+                )
             except json.JSONDecodeError:
                 yield f"data: {json.dumps({'type': 'error', 'data': 'JSON 파싱 실패'}, ensure_ascii=False)}\n\n"
 

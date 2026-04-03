@@ -93,7 +93,7 @@ async def analyze_combined(
 
     # ── Step 6: 종합 LLM 분석 ──
     if stream:
-        def event_stream():
+        async def event_stream():
             # 관상 + 사주 즉시 전송
             classified = {
                 "type": "classified",
@@ -128,6 +128,20 @@ async def analyze_combined(
             try:
                 parsed = json.loads(full_text)
                 yield f"data: {json.dumps({'type': 'done', 'data': parsed}, ensure_ascii=False)}\n\n"
+
+                # 이력 저장
+                image_path = await upload_face_image(user["id"], image_bytes, file.content_type or "image/jpeg")
+                await save_history(
+                    user_id=user["id"],
+                    analysis_type="combined",
+                    input_data={
+                        "birth_year": birth_year, "birth_month": birth_month,
+                        "birth_day": birth_day, "birth_hour": birth_hour,
+                        "gender": gender,
+                    },
+                    result_data={"face": face_result, "saju": saju_data, "saju_scores": saju_scores, "combined": parsed, "hero": hero},
+                    image_url=image_path,
+                )
             except json.JSONDecodeError:
                 yield f"data: {json.dumps({'type': 'error', 'data': 'JSON 파싱 실패'}, ensure_ascii=False)}\n\n"
 

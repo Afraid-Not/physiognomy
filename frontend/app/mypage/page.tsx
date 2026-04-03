@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import AuthGuard from "../components/AuthGuard";
-import NavBar from "../components/NavBar";
+
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 
@@ -107,8 +107,7 @@ const MyPage = () => {
 
   return (
     <AuthGuard>
-      <NavBar />
-      <div className="flex flex-col items-center min-h-screen p-4 pt-16 bg-zinc-50 dark:bg-zinc-950">
+      <div className="flex flex-col items-center flex-1 p-4">
         <div className="w-full max-w-2xl flex flex-col gap-6">
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
             마이페이지

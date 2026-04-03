@@ -97,7 +97,7 @@ const ResultPage = () => {
 
   if (!result) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center flex-1">
         <div className="flex flex-col items-center gap-3">
           <svg
             className="w-8 h-8 animate-spin text-zinc-400"
@@ -133,7 +133,7 @@ const ResultPage = () => {
   const rightFeatures = result.features.filter((_, i) => i % 2 === 1);
 
   return (
-    <div className="flex flex-col items-center min-h-screen p-4 bg-zinc-50 dark:bg-zinc-950">
+    <div className="flex flex-col items-center flex-1 p-4">
       {/* PDF 캡처 영역 */}
       <div
         ref={reportRef}

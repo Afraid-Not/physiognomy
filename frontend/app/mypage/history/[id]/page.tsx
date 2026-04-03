@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import AuthGuard from "../../../components/AuthGuard";
-import NavBar from "../../../components/NavBar";
+
 import { useAuth } from "../../../hooks/useAuth";
 
 interface HistoryDetail {
@@ -86,8 +86,7 @@ const HistoryDetailPage = () => {
 
   return (
     <AuthGuard>
-      <NavBar />
-      <div className="flex flex-col items-center min-h-screen p-4 pt-16 bg-zinc-50 dark:bg-zinc-950">
+      <div className="flex flex-col items-center flex-1 p-4">
         <div className="w-full max-w-2xl">
           <button
             onClick={() => router.push("/mypage")}

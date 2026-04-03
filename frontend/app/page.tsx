@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import AuthGuard from "./components/AuthGuard";
-import NavBar from "./components/NavBar";
 
 const menuItems = [
   {
@@ -72,12 +71,11 @@ const HomePage = () => {
 
   return (
     <AuthGuard>
-      <NavBar />
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 pt-16">
-        <main className="w-full max-w-lg flex flex-col items-center gap-10">
+      <div className="flex flex-col items-center justify-center flex-1 p-6">
+        <main className="w-full flex flex-col items-center gap-10">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">
-              AI 운세
+              점.ZIP
             </h1>
             <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-400">
               관상과 사주로 보는 나의 운명
