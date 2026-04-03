@@ -16,7 +16,8 @@ from services.rag import search_saju_knowledge
 from services.llm import generate_saju_analysis, generate_saju_analysis_stream
 from services.history import save_history
 from services.hero_match import match_hero_saju
-from middleware.auth import get_current_user
+from middleware.auth import get_optional_user
+from middleware.turnstile import require_turnstile
 
 router = APIRouter()
 
@@ -29,14 +30,18 @@ class SajuRequest(BaseModel):
     birth_minute: int = Field(0, ge=0, le=59)
     gender: str = Field(..., pattern="^(male|female)$")
     stream: bool = False
+    turnstile_token: str = ""
 
 
 @router.post("/saju")
-async def analyze_saju_endpoint(req: SajuRequest, user: dict = Depends(get_current_user)):
+async def analyze_saju_endpoint(req: SajuRequest, user: dict | None = Depends(get_optional_user)):
     """
     생년월일시 → 사주 원국 → 점수 산정 → RAG → LLM 분석
     stream=true 이면 SSE 스트리밍 응답
     """
+    # Turnstile 캡챠 검증
+    await require_turnstile(req.turnstile_token)
+
     # 날짜 유효성 검증
     try:
         date(req.birth_year, req.birth_month, req.birth_day)
@@ -98,17 +103,18 @@ async def analyze_saju_endpoint(req: SajuRequest, user: dict = Depends(get_curre
                             parsed["scores"][i]["category"] = scores[key]["category"]
                 yield f"data: {json.dumps({'type': 'done', 'data': parsed}, ensure_ascii=False)}\n\n"
 
-                # 이력 저장
-                await save_history(
-                    user_id=user["id"],
-                    analysis_type="saju",
-                    input_data={
-                        "birth_year": req.birth_year, "birth_month": req.birth_month,
-                        "birth_day": req.birth_day, "birth_hour": req.birth_hour,
-                        "gender": req.gender,
-                    },
-                    result_data={"saju": saju_data, "scores": scores, "analysis": parsed, "hero": hero},
-                )
+                # 이력 저장 (로그인 사용자만)
+                if user:
+                    await save_history(
+                        user_id=user["id"],
+                        analysis_type="saju",
+                        input_data={
+                            "birth_year": req.birth_year, "birth_month": req.birth_month,
+                            "birth_day": req.birth_day, "birth_hour": req.birth_hour,
+                            "gender": req.gender,
+                        },
+                        result_data={"saju": saju_data, "scores": scores, "analysis": parsed, "hero": hero},
+                    )
             except json.JSONDecodeError:
                 yield f"data: {json.dumps({'type': 'error', 'data': 'JSON 파싱 실패'}, ensure_ascii=False)}\n\n"
 
@@ -124,17 +130,18 @@ async def analyze_saju_endpoint(req: SajuRequest, user: dict = Depends(get_curre
                 result["scores"][i]["score"] = scores[key]["score"]
                 result["scores"][i]["category"] = scores[key]["category"]
 
-    # 이력 저장
-    await save_history(
-        user_id=user["id"],
-        analysis_type="saju",
-        input_data={
-            "birth_year": req.birth_year, "birth_month": req.birth_month,
-            "birth_day": req.birth_day, "birth_hour": req.birth_hour,
-            "gender": req.gender,
-        },
-        result_data={"saju": saju_data, "scores": scores, "analysis": result, "hero": hero},
-    )
+    # 이력 저장 (로그인 사용자만)
+    if user:
+        await save_history(
+            user_id=user["id"],
+            analysis_type="saju",
+            input_data={
+                "birth_year": req.birth_year, "birth_month": req.birth_month,
+                "birth_day": req.birth_day, "birth_hour": req.birth_hour,
+                "gender": req.gender,
+            },
+            result_data={"saju": saju_data, "scores": scores, "analysis": result, "hero": hero},
+        )
 
     return {
         "saju": saju_data,

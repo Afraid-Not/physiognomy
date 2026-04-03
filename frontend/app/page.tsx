@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import AuthGuard from "./components/AuthGuard";
 
 const menuItems = [
   {
@@ -70,100 +69,98 @@ const HomePage = () => {
   const router = useRouter();
 
   return (
-    <AuthGuard>
-      <div className="flex flex-col items-center justify-center flex-1 p-6">
-        <main className="w-full flex flex-col items-center gap-10">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">
-              점zip
-            </h1>
-            <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-400">
-              관상과 사주로 보는 나의 운명
-            </p>
-          </div>
+    <div className="flex flex-col items-center justify-center flex-1 p-6">
+      <main className="w-full flex flex-col items-center gap-10">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">
+            점zip
+          </h1>
+          <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-400">
+            관상과 사주로 보는 나의 운명
+          </p>
+        </div>
 
-          <div className="w-full flex flex-col gap-4">
-            {menuItems.map((item) => (
-              <button
-                key={item.href}
-                onClick={() => router.push(item.href)}
-                className="w-full p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all hover:shadow-md text-left flex items-center gap-4 group"
+        <div className="w-full flex flex-col gap-4">
+          {menuItems.map((item) => (
+            <button
+              key={item.href}
+              onClick={() => router.push(item.href)}
+              className="w-full p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all hover:shadow-md text-left flex items-center gap-4 group"
+            >
+              <div className="shrink-0 w-14 h-14 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
+                {item.icon}
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                  {item.title}
+                </h2>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  {item.description}
+                </p>
+              </div>
+              <svg
+                className="w-5 h-5 ml-auto shrink-0 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 transition-colors"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <div className="shrink-0 w-14 h-14 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
-                  {item.icon}
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                    {item.title}
-                  </h2>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
-                    {item.description}
-                  </p>
-                </div>
-                <svg
-                  className="w-5 h-5 ml-auto shrink-0 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 transition-colors"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          ))}
+        </div>
+
+        <div className="text-center px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            본 서비스는 재미로 보는 운세입니다.
+          </p>
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            과학적 근거가 없으며, 결과에 의미를 두지 마세요!
+          </p>
+        </div>
+
+        <div className="w-full px-4 py-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/30">
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-2">
+            추후 추가 예정
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              "타로 분석",
+              "별자리 분석",
+              "혈액형 분석",
+              "MBTI 포함 종합분석",
+            ].map((label) => (
+              <span
+                key={label}
+                className="px-3 py-1 text-xs rounded-full bg-zinc-200/70 dark:bg-zinc-700/50 text-zinc-500 dark:text-zinc-400"
+              >
+                {label}
+              </span>
             ))}
           </div>
+        </div>
 
-          <div className="text-center px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
-            <p className="text-xs text-zinc-400 dark:text-zinc-500">
-              본 서비스는 재미로 보는 운세입니다.
-            </p>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500">
-              과학적 근거가 없으며, 결과에 의미를 두지 마세요!
-            </p>
-          </div>
-
-          <div className="w-full px-4 py-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/30">
-            <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-2">
-              추후 추가 예정
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {[
-                "타로 분석",
-                "별자리 분석",
-                "혈액형 분석",
-                "MBTI 포함 종합분석",
-              ].map((label) => (
-                <span
-                  key={label}
-                  className="px-3 py-1 text-xs rounded-full bg-zinc-200/70 dark:bg-zinc-700/50 text-zinc-500 dark:text-zinc-400"
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-3 text-xs text-zinc-400 dark:text-zinc-500">
-            <button
-              onClick={() => router.push("/privacy")}
-              className="hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors underline"
-            >
-              개인정보처리방침
-            </button>
-            <button
-              onClick={() => router.push("/terms")}
-              className="hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors underline"
-            >
-              이용약관
-            </button>
-          </div>
-        </main>
-      </div>
-    </AuthGuard>
+        <div className="flex gap-3 text-xs text-zinc-400 dark:text-zinc-500">
+          <button
+            onClick={() => router.push("/privacy")}
+            className="hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors underline"
+          >
+            개인정보처리방침
+          </button>
+          <button
+            onClick={() => router.push("/terms")}
+            className="hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors underline"
+          >
+            이용약관
+          </button>
+        </div>
+      </main>
+    </div>
   );
 };
 

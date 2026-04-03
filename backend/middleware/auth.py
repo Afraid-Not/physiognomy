@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent.parent / ".env")
 
 _security = HTTPBearer()
+_security_optional = HTTPBearer(auto_error=False)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "")
@@ -66,6 +67,36 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="토큰에 사용자 정보가 없습니다.",
         )
+
+    return {
+        "id": user_id,
+        "email": payload.get("email", ""),
+        "role": payload.get("role", ""),
+    }
+
+
+def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_security_optional),
+) -> dict | None:
+    """
+    JWT 토큰이 있으면 검증 후 사용자 반환, 없으면 None 반환
+    """
+    if credentials is None:
+        return None
+    try:
+        signing_key = _get_jwks_client().get_signing_key_from_jwt(credentials.credentials)
+        payload = jwt.decode(
+            credentials.credentials,
+            signing_key.key,
+            algorithms=["ES256"],
+            audience="authenticated",
+        )
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return None
+
+    user_id = payload.get("sub")
+    if not user_id:
+        return None
 
     return {
         "id": user_id,

@@ -13,3 +13,4 @@ pyjwt[crypto]
 joblib
 xgboost
 scikit-learn
+httpx

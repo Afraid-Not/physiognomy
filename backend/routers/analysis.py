@@ -1,6 +1,6 @@
 import json
 
-from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -11,7 +11,8 @@ from services.llm import generate_analysis, generate_analysis_stream
 from services.history import save_history
 
 from services.hero_match import match_hero_face
-from middleware.auth import get_current_user
+from middleware.auth import get_optional_user
+from middleware.turnstile import require_turnstile
 
 router = APIRouter()
 
@@ -32,12 +33,16 @@ class AnalysisResponse(BaseModel):
 async def analyze_face(
     file: UploadFile = File(...),
     stream: bool = False,
-    user: dict = Depends(get_current_user),
+    turnstile_token: str = Form(""),
+    user: dict | None = Depends(get_optional_user),
 ):
     """
     사진 → 랜드마크 → 비율 → 모델 추론 → RAG → LLM 분석
     stream=true 이면 SSE 스트리밍 응답
     """
+    # Turnstile 캡챠 검증
+    await require_turnstile(turnstile_token)
+
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="이미지 파일만 업로드 가능합니다.")
 
@@ -88,13 +93,14 @@ async def analyze_face(
                             f["category"] = f"{features[i].category} - {features[i].label}"
                 yield f"data: {json.dumps({'type': 'done', 'data': parsed}, ensure_ascii=False)}\n\n"
 
-                # 이력 저장
-                await save_history(
-                    user_id=user["id"],
-                    analysis_type="face",
-                    input_data={},
-                    result_data={**parsed, "hero": hero},
-                )
+                # 이력 저장 (로그인 사용자만)
+                if user:
+                    await save_history(
+                        user_id=user["id"],
+                        analysis_type="face",
+                        input_data={},
+                        result_data={**parsed, "hero": hero},
+                    )
             except json.JSONDecodeError:
                 yield f"data: {json.dumps({'type': 'error', 'data': 'JSON 파싱 실패'}, ensure_ascii=False)}\n\n"
 
@@ -109,13 +115,14 @@ async def analyze_face(
                 f["score"] = features[i].score
                 f["category"] = f"{features[i].category} - {features[i].label}"
 
-    # 이력 저장
-    await save_history(
-        user_id=user["id"],
-        analysis_type="face",
-        input_data={},
-        result_data={**result, "hero": hero},
-    )
+    # 이력 저장 (로그인 사용자만)
+    if user:
+        await save_history(
+            user_id=user["id"],
+            analysis_type="face",
+            input_data={},
+            result_data={**result, "hero": hero},
+        )
 
     result["hero"] = hero
     return result

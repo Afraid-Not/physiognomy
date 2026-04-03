@@ -1,0 +1,13 @@
+backend/
+ml/
+data/
+debug-captured/
+docs/
+supabase/
+026.*
+*.joblib
+*.csv
+*.z01
+*.zip
+Dockerfile
+.dockerignore
