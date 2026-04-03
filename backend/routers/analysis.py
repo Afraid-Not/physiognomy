@@ -9,7 +9,7 @@ from services.classifier import classify_features
 from services.rag import search_knowledge
 from services.llm import generate_analysis, generate_analysis_stream
 from services.history import save_history
-from services.storage import upload_face_image
+
 from services.hero_match import match_hero_face
 from middleware.auth import get_current_user
 
@@ -89,13 +89,11 @@ async def analyze_face(
                 yield f"data: {json.dumps({'type': 'done', 'data': parsed}, ensure_ascii=False)}\n\n"
 
                 # 이력 저장
-                image_path = await upload_face_image(user["id"], image_bytes, file.content_type or "image/jpeg")
                 await save_history(
                     user_id=user["id"],
                     analysis_type="face",
                     input_data={},
                     result_data={**parsed, "hero": hero},
-                    image_url=image_path,
                 )
             except json.JSONDecodeError:
                 yield f"data: {json.dumps({'type': 'error', 'data': 'JSON 파싱 실패'}, ensure_ascii=False)}\n\n"
@@ -112,13 +110,11 @@ async def analyze_face(
                 f["category"] = f"{features[i].category} - {features[i].label}"
 
     # 이력 저장
-    image_path = await upload_face_image(user["id"], image_bytes, file.content_type or "image/jpeg")
     await save_history(
         user_id=user["id"],
         analysis_type="face",
         input_data={},
         result_data={**result, "hero": hero},
-        image_url=image_path,
     )
 
     result["hero"] = hero
