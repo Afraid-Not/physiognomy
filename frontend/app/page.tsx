@@ -75,7 +75,7 @@ const HomePage = () => {
         <main className="w-full flex flex-col items-center gap-10">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">
-              점.ZIP
+              점zip
             </h1>
             <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-400">
               관상과 사주로 보는 나의 운명

@@ -58,7 +58,7 @@ const LoginPage = () => {
             로그인
           </h1>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-            점.ZIP 서비스를 이용하려면 로그인해주세요
+            점zip 서비스를 이용하려면 로그인해주세요
           </p>
         </div>
 
