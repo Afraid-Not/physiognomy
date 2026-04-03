@@ -10,3 +10,6 @@ python-dotenv
 pydantic
 lunar-python
 pyjwt[crypto]
+joblib
+xgboost
+scikit-learn
