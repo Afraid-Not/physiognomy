@@ -125,6 +125,27 @@ const HomePage = () => {
               과학적 근거가 없으며, 결과에 의미를 두지 마세요!
             </p>
           </div>
+
+          <div className="w-full px-4 py-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/30">
+            <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-2">
+              추후 추가 예정
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                "타로 분석",
+                "별자리 분석",
+                "혈액형 분석",
+                "MBTI 포함 종합분석",
+              ].map((label) => (
+                <span
+                  key={label}
+                  className="px-3 py-1 text-xs rounded-full bg-zinc-200/70 dark:bg-zinc-700/50 text-zinc-500 dark:text-zinc-400"
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
         </main>
       </div>
     </AuthGuard>
