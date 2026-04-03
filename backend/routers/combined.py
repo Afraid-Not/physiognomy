@@ -6,7 +6,7 @@ POST /api/combined
 import json
 from datetime import date
 
-from fastapi import APIRouter, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 
 from services.landmark import extract_landmarks
@@ -19,6 +19,9 @@ from services.llm import (
     generate_combined_stream,
     generate_combined_analysis,
 )
+from services.history import save_history
+from services.storage import upload_face_image
+from middleware.auth import get_current_user
 
 router = APIRouter()
 
@@ -33,6 +36,7 @@ async def analyze_combined(
     birth_minute: int = Form(0),
     gender: str = Form(...),
     stream: bool = Form(False),
+    user: dict = Depends(get_current_user),
 ):
     """
     사진 + 생년월일 → 관상 분석 + 사주 분석 → 종합 LLM 해석
@@ -127,6 +131,20 @@ async def analyze_combined(
     # 일반 응답
     combined_result = await generate_combined_analysis(
         face_features, face_result, saju_data, saju_scores, combined_knowledge
+    )
+
+    # 이력 저장
+    image_path = await upload_face_image(user["id"], image_bytes, file.content_type or "image/jpeg")
+    await save_history(
+        user_id=user["id"],
+        analysis_type="combined",
+        input_data={
+            "birth_year": birth_year, "birth_month": birth_month,
+            "birth_day": birth_day, "birth_hour": birth_hour,
+            "gender": gender,
+        },
+        result_data={"face": face_result, "saju": saju_data, "saju_scores": saju_scores, "combined": combined_result},
+        image_url=image_path,
     )
 
     return {

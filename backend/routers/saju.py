@@ -6,7 +6,7 @@ POST /api/saju
 import json
 from datetime import date
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -14,6 +14,8 @@ from services.saju import analyze_saju
 from services.saju_scoring import compute_saju_scores
 from services.rag import search_saju_knowledge
 from services.llm import generate_saju_analysis, generate_saju_analysis_stream
+from services.history import save_history
+from middleware.auth import get_current_user
 
 router = APIRouter()
 
@@ -29,7 +31,7 @@ class SajuRequest(BaseModel):
 
 
 @router.post("/saju")
-async def analyze_saju_endpoint(req: SajuRequest):
+async def analyze_saju_endpoint(req: SajuRequest, user: dict = Depends(get_current_user)):
     """
     생년월일시 → 사주 원국 → 점수 산정 → RAG → LLM 분석
     stream=true 이면 SSE 스트리밍 응답
@@ -104,6 +106,18 @@ async def analyze_saju_endpoint(req: SajuRequest):
             if i < len(result["scores"]) and key in scores:
                 result["scores"][i]["score"] = scores[key]["score"]
                 result["scores"][i]["category"] = scores[key]["category"]
+
+    # 이력 저장
+    await save_history(
+        user_id=user["id"],
+        analysis_type="saju",
+        input_data={
+            "birth_year": req.birth_year, "birth_month": req.birth_month,
+            "birth_day": req.birth_day, "birth_hour": req.birth_hour,
+            "gender": req.gender,
+        },
+        result_data={"saju": saju_data, "scores": scores, "analysis": result},
+    )
 
     return {
         "saju": saju_data,

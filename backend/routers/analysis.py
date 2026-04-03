@@ -1,6 +1,6 @@
 import json
 
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -8,6 +8,9 @@ from services.landmark import extract_landmarks
 from services.classifier import classify_features
 from services.rag import search_knowledge
 from services.llm import generate_analysis, generate_analysis_stream
+from services.history import save_history
+from services.storage import upload_face_image
+from middleware.auth import get_current_user
 
 router = APIRouter()
 
@@ -25,7 +28,11 @@ class AnalysisResponse(BaseModel):
 
 
 @router.post("/analyze")
-async def analyze_face(file: UploadFile = File(...), stream: bool = False):
+async def analyze_face(
+    file: UploadFile = File(...),
+    stream: bool = False,
+    user: dict = Depends(get_current_user),
+):
     """
     사진 → 랜드마크 → 비율 → 모델 추론 → RAG → LLM 분석
     stream=true 이면 SSE 스트리밍 응답
@@ -88,4 +95,15 @@ async def analyze_face(file: UploadFile = File(...), stream: bool = False):
             if i < len(features):
                 f["score"] = features[i].score
                 f["category"] = f"{features[i].category} - {features[i].label}"
+
+    # 이력 저장
+    image_path = await upload_face_image(user["id"], image_bytes, file.content_type or "image/jpeg")
+    await save_history(
+        user_id=user["id"],
+        analysis_type="face",
+        input_data={},
+        result_data=result,
+        image_url=image_path,
+    )
+
     return result

@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import AuthGuard from "./components/AuthGuard";
+import NavBar from "./components/NavBar";
 
 const menuItems = [
   {
@@ -69,58 +71,61 @@ const HomePage = () => {
   const router = useRouter();
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6">
-      <main className="w-full max-w-lg flex flex-col items-center gap-10">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">
-            AI 운세
-          </h1>
-          <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-400">
-            관상과 사주로 보는 나의 운명
-          </p>
-        </div>
+    <AuthGuard>
+      <NavBar />
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 pt-16">
+        <main className="w-full max-w-lg flex flex-col items-center gap-10">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">
+              AI 운세
+            </h1>
+            <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-400">
+              관상과 사주로 보는 나의 운명
+            </p>
+          </div>
 
-        <div className="w-full flex flex-col gap-4">
-          {menuItems.map((item) => (
-            <button
-              key={item.href}
-              onClick={() => router.push(item.href)}
-              className="w-full p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all hover:shadow-md text-left flex items-center gap-4 group"
-            >
-              <div className="shrink-0 w-14 h-14 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
-                {item.icon}
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                  {item.title}
-                </h2>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  {item.description}
-                </p>
-              </div>
-              <svg
-                className="w-5 h-5 ml-auto shrink-0 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 transition-colors"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          <div className="w-full flex flex-col gap-4">
+            {menuItems.map((item) => (
+              <button
+                key={item.href}
+                onClick={() => router.push(item.href)}
+                className="w-full p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all hover:shadow-md text-left flex items-center gap-4 group"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          ))}
-        </div>
+                <div className="shrink-0 w-14 h-14 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
+                  {item.icon}
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                    {item.title}
+                  </h2>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    {item.description}
+                  </p>
+                </div>
+                <svg
+                  className="w-5 h-5 ml-auto shrink-0 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 transition-colors"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            ))}
+          </div>
 
-        <p className="text-xs text-zinc-300 dark:text-zinc-600 text-center">
-          본 서비스는 전통 관상학/명리학에 기반한 재미 목적의 분석이며, 과학적
-          근거가 아닙니다.
-        </p>
-      </main>
-    </div>
+          <p className="text-xs text-zinc-300 dark:text-zinc-600 text-center">
+            본 서비스는 전통 관상학/명리학에 기반한 재미 목적의 분석이며, 과학적
+            근거가 아닙니다.
+          </p>
+        </main>
+      </div>
+    </AuthGuard>
   );
 };
 
