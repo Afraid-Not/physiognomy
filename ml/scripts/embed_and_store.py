@@ -60,6 +60,7 @@ def load_all_data():
         ("rag_academic.json", None),
         ("rag_blogs.json", None),
         ("rag_interpretations.json", None),
+        ("saju_knowledge.json", None),
     ]
     for filename, _ in rag_files:
         filepath = DATA_DIR / filename

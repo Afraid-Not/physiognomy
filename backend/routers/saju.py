@@ -1,0 +1,112 @@
+"""
+사주팔자 분석 엔드포인트
+POST /api/saju
+"""
+
+import json
+from datetime import date
+
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
+
+from services.saju import analyze_saju
+from services.saju_scoring import compute_saju_scores
+from services.rag import search_saju_knowledge
+from services.llm import generate_saju_analysis, generate_saju_analysis_stream
+
+router = APIRouter()
+
+
+class SajuRequest(BaseModel):
+    birth_year: int = Field(..., ge=1900, le=2100)
+    birth_month: int = Field(..., ge=1, le=12)
+    birth_day: int = Field(..., ge=1, le=31)
+    birth_hour: int = Field(..., ge=0, le=23)
+    birth_minute: int = Field(0, ge=0, le=59)
+    gender: str = Field(..., pattern="^(male|female)$")
+    stream: bool = False
+
+
+@router.post("/saju")
+async def analyze_saju_endpoint(req: SajuRequest):
+    """
+    생년월일시 → 사주 원국 → 점수 산정 → RAG → LLM 분석
+    stream=true 이면 SSE 스트리밍 응답
+    """
+    # 날짜 유효성 검증
+    try:
+        date(req.birth_year, req.birth_month, req.birth_day)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="유효하지 않은 날짜입니다.")
+
+    # Step 1: 사주 원국 계산
+    saju_result = analyze_saju(
+        req.birth_year, req.birth_month, req.birth_day,
+        req.birth_hour, req.birth_minute,
+        gender=req.gender,
+    )
+    saju_data = saju_result.to_dict()
+
+    # Step 2: 규칙 기반 점수 산정
+    current_year = date.today().year
+    current_age = current_year - req.birth_year + 1  # 한국 나이
+    scores = compute_saju_scores(saju_result, current_age)
+
+    # Step 3: RAG 지식 검색
+    knowledge = await search_saju_knowledge(saju_data)
+
+    # Step 4: LLM 분석 생성
+    if req.stream:
+        def event_stream():
+            # 먼저 사주 원국 + 점수 즉시 전송
+            classified = {
+                "type": "classified",
+                "data": {
+                    "pillars": saju_data["pillars"],
+                    "elements": saju_data["elements"],
+                    "yongsin": saju_data["yongsin"],
+                    "birth_info": saju_data["birth_info"],
+                    "dayun": saju_data["dayun"],
+                    "scores": scores,
+                },
+            }
+            yield f"data: {json.dumps(classified, ensure_ascii=False)}\n\n"
+
+            # LLM 스트리밍
+            full_text = ""
+            for chunk in generate_saju_analysis_stream(saju_data, scores, knowledge):
+                full_text += chunk
+                yield f"data: {json.dumps({'type': 'chunk', 'data': chunk}, ensure_ascii=False)}\n\n"
+
+            # 최종 파싱
+            try:
+                parsed = json.loads(full_text)
+                # 규칙 기반 점수 강제 적용
+                if "scores" in parsed:
+                    score_keys = ["element_balance", "yongsin_strength", "sipsin_balance", "wealth", "love", "career"]
+                    for i, key in enumerate(score_keys):
+                        if i < len(parsed["scores"]) and key in scores:
+                            parsed["scores"][i]["score"] = scores[key]["score"]
+                            parsed["scores"][i]["category"] = scores[key]["category"]
+                yield f"data: {json.dumps({'type': 'done', 'data': parsed}, ensure_ascii=False)}\n\n"
+            except json.JSONDecodeError:
+                yield f"data: {json.dumps({'type': 'error', 'data': 'JSON 파싱 실패'}, ensure_ascii=False)}\n\n"
+
+        return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+    # 일반 응답
+    result = await generate_saju_analysis(saju_data, scores, knowledge)
+    # 규칙 기반 점수 강제 적용
+    if "scores" in result:
+        score_keys = ["element_balance", "yongsin_strength", "sipsin_balance", "wealth", "love", "career"]
+        for i, key in enumerate(score_keys):
+            if i < len(result["scores"]) and key in scores:
+                result["scores"][i]["score"] = scores[key]["score"]
+                result["scores"][i]["category"] = scores[key]["category"]
+
+    return {
+        "saju": saju_data,
+        "scores": scores,
+        "analysis": result,
+    }

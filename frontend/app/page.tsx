@@ -1,154 +1,105 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 
+const menuItems = [
+  {
+    title: "관상 분석",
+    description: "얼굴 사진으로 AI가 관상을 분석합니다",
+    href: "/face",
+    icon: (
+      <svg
+        className="w-8 h-8"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z"
+        />
+      </svg>
+    ),
+  },
+  {
+    title: "사주 분석",
+    description: "생년월일로 사주팔자를 풀어드립니다",
+    href: "/saju",
+    icon: (
+      <svg
+        className="w-8 h-8"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+        />
+      </svg>
+    ),
+  },
+  {
+    title: "종합 분석",
+    description: "관상 + 사주를 합쳐 종합 운세를 봅니다",
+    href: "/combined",
+    icon: (
+      <svg
+        className="w-8 h-8"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+        />
+      </svg>
+    ),
+  },
+];
+
 const HomePage = () => {
-  const [preview, setPreview] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-
-  const handleFileSelect = useCallback((selected: File) => {
-    if (!selected.type.startsWith("image/")) {
-      setError("이미지 파일만 업로드 가능합니다.");
-      return;
-    }
-    setError(null);
-    setFile(selected);
-    const reader = new FileReader();
-    reader.onloadend = () => setPreview(reader.result as string);
-    reader.readAsDataURL(selected);
-  }, []);
-
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const selected = e.target.files?.[0];
-      if (selected) handleFileSelect(selected);
-    },
-    [handleFileSelect],
-  );
-
-  const handleUpload = useCallback(async () => {
-    if (!file) {
-      setError("파일을 선택해주세요.");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-    setLoadingStep("얼굴을 분석하고 있어요...");
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-      const res = await fetch(`${apiUrl}/api/analyze?stream=true`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.detail ?? `분석 실패 (${res.status})`);
-      }
-
-      // SSE 스트리밍 파싱
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("스트리밍을 시작할 수 없습니다.");
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const json_str = line.slice(6);
-          try {
-            const msg = JSON.parse(json_str);
-
-            if (msg.type === "classified") {
-              setLoadingStep("관상 지식을 찾고 있어요...");
-            } else if (msg.type === "chunk") {
-              setLoadingStep("관상 분석을 작성하고 있어요...");
-            } else if (msg.type === "done") {
-              sessionStorage.setItem(
-                "analysisResult",
-                JSON.stringify(msg.data),
-              );
-              if (preview) sessionStorage.setItem("uploadedImage", preview);
-              router.push("/result");
-              return;
-            } else if (msg.type === "error") {
-              throw new Error(msg.data);
-            }
-          } catch (e) {
-            // JSON parse error for incomplete chunks - ignore
-          }
-        }
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.",
-      );
-    } finally {
-      setIsLoading(false);
-      setLoadingStep("");
-    }
-  }, [file, preview, router]);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const dropped = e.dataTransfer.files[0];
-      if (dropped) handleFileSelect(dropped);
-    },
-    [handleFileSelect],
-  );
-
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
-      <main className="w-full max-w-lg flex flex-col items-center gap-8">
+      <main className="w-full max-w-lg flex flex-col items-center gap-10">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">
-            관상 분석 AI
+            AI 운세
           </h1>
           <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-400">
-            사진을 업로드하면 AI가 관상을 분석해드립니다
+            관상과 사주로 보는 나의 운명
           </p>
         </div>
 
-        <div
-          className="w-full aspect-square max-w-sm border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-2xl flex items-center justify-center overflow-hidden cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors bg-white dark:bg-zinc-900"
-          onClick={() => fileInputRef.current?.click()}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-        >
-          {preview ? (
-            <img
-              src={preview}
-              alt="업로드된 사진 미리보기"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="flex flex-col items-center gap-3 text-zinc-400 dark:text-zinc-500">
+        <div className="w-full flex flex-col gap-4">
+          {menuItems.map((item) => (
+            <button
+              key={item.href}
+              onClick={() => router.push(item.href)}
+              className="w-full p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all hover:shadow-md text-left flex items-center gap-4 group"
+            >
+              <div className="shrink-0 w-14 h-14 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
+                {item.icon}
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                  {item.title}
+                </h2>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  {item.description}
+                </p>
+              </div>
               <svg
-                className="w-12 h-12"
+                className="w-5 h-5 ml-auto shrink-0 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 transition-colors"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -156,64 +107,18 @@ const HomePage = () => {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M12 16v-8m0 0l-3 3m3-3l3 3M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
                 />
               </svg>
-              <p className="text-sm">클릭하거나 사진을 드래그하세요</p>
-              <p className="text-xs text-zinc-300 dark:text-zinc-600">
-                정면 사진을 권장합니다
-              </p>
-            </div>
-          )}
+            </button>
+          ))}
         </div>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-
-        {error && (
-          <div className="w-full max-w-sm p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800">
-            <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-          </div>
-        )}
-
-        <button
-          onClick={handleUpload}
-          disabled={!file || isLoading}
-          className="w-full max-w-sm h-12 rounded-full bg-zinc-900 text-white font-medium text-base transition-colors hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 flex items-center justify-center gap-2"
-        >
-          {isLoading ? (
-            <>
-              <svg
-                className="w-5 h-5 animate-spin"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
-              </svg>
-              {loadingStep || "분석 중..."}
-            </>
-          ) : (
-            "관상 분석하기"
-          )}
-        </button>
+        <p className="text-xs text-zinc-300 dark:text-zinc-600 text-center">
+          본 서비스는 전통 관상학/명리학에 기반한 재미 목적의 분석이며, 과학적
+          근거가 아닙니다.
+        </p>
       </main>
     </div>
   );

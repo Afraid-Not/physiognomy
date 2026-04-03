@@ -7,12 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 # .env 로드
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-from routers import analysis
+from routers import analysis, saju, combined
 
 app = FastAPI(
     title="Physiognomy AI API",
-    description="AI 기반 관상 분석 API",
-    version="0.1.0",
+    description="AI 기반 관상 + 사주 분석 API",
+    version="0.2.0",
 )
 
 app.add_middleware(
@@ -24,6 +24,8 @@ app.add_middleware(
 )
 
 app.include_router(analysis.router, prefix="/api", tags=["analysis"])
+app.include_router(saju.router, prefix="/api", tags=["saju"])
+app.include_router(combined.router, prefix="/api", tags=["combined"])
 
 
 @app.get("/health")

@@ -1,15 +1,25 @@
 # Physiognomy AI
 
-AI 기반 관상 분석 웹 서비스. 얼굴 사진을 업로드하면 MediaPipe 랜드마크 추출 → XGBoost 분류 → RAG 지식 검색 → LLM 해석까지 자동으로 수행합니다.
+AI 기반 관상 + 사주팔자 분석 웹 서비스. 얼굴 사진과 생년월일을 입력하면 관상 분석, 사주 분석, 종합 운세 분석까지 자동으로 수행합니다.
 
 ## Features
 
+### 관상 분석
 - 얼굴 사진 업로드 → 9개 부위(눈, 눈썹, 코, 입, 이마, 턱, 얼굴형, 인중, 광대뼈) 관상 분류
 - MediaPipe FaceLandmarker 기반 468+ 랜드마크 추출 및 비율 계산
 - XGBoost 모델로 부위별 관상 유형 분류 (봉안, 복코, 계란형 등)
-- Supabase pgvector 하이브리드 검색 RAG로 관상학 지식 조회
-- OpenAI GPT-4o-mini 기반 종합 관상 해석 생성 (SSE 스트리밍)
-- 규칙 기반 관상 점수 산정 (전통 해석 기반 1~10점)
+
+### 사주팔자 분석
+- 생년월일 + 태어난 시간 입력 → 사주 원국 (년주/월주/일주/시주) 계산
+- 오행 분석 (목/화/토/금/수 비율), 십신 분석, 용신/희신 판단
+- 대운/세운 흐름 표시
+- 한국 표준시 보정 (서머타임, 1954~1961 UTC+8:30, 경도 보정)
+
+### 공통
+- Supabase pgvector 하이브리드 검색 RAG로 관상학/사주학 지식 조회
+- OpenAI GPT-4o-mini 기반 해석 생성 (SSE 스트리밍)
+- 규칙 기반 점수 산정 (전통 해석 기반 1~10점)
+- 관상 + 사주 종합 분석 리포트
 - 결과 PDF 다운로드
 
 ## Tech Stack
@@ -17,7 +27,7 @@ AI 기반 관상 분석 웹 서비스. 얼굴 사진을 업로드하면 MediaPip
 | Layer    | Stack                                            |
 | -------- | ------------------------------------------------ |
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
-| Backend  | FastAPI, Uvicorn, Pydantic                       |
+| Backend  | FastAPI, Uvicorn, Pydantic, lunar-python          |
 | ML       | MediaPipe, XGBoost (joblib), OpenCV, NumPy       |
 | AI       | OpenAI API (GPT-4o-mini, text-embedding-3-small) |
 | DB       | Supabase (pgvector)                              |
