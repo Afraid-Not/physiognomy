@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import HeroCard from "../../components/HeroCard";
 
 interface CombinedResultData {
   classified: {
@@ -81,6 +82,8 @@ const PILLAR_KEYS = ["year", "month", "day", "hour"];
 const CombinedResultPage = () => {
   const [result, setResult] = useState<CombinedResultData | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [hero, setHero] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -88,12 +91,14 @@ const CombinedResultPage = () => {
   useEffect(() => {
     const stored = sessionStorage.getItem("combinedResult");
     const image = sessionStorage.getItem("uploadedImage");
+    const heroStored = sessionStorage.getItem("heroMatch");
     if (!stored) {
       router.push("/combined");
       return;
     }
     setResult(JSON.parse(stored));
     if (image) setUploadedImage(image);
+    if (heroStored) setHero(JSON.parse(heroStored));
   }, [router]);
 
   const handleRetry = () => {
@@ -179,6 +184,13 @@ const CombinedResultPage = () => {
         ref={reportRef}
         className="w-full max-w-4xl bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden"
       >
+        {/* 위인 매칭 카드 */}
+        {hero && (
+          <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
+            <HeroCard hero={hero} />
+          </div>
+        )}
+
         {/* 상단 */}
         <div className="flex flex-col sm:flex-row gap-0 border-b border-zinc-200 dark:border-zinc-800">
           <div className="sm:w-1/3 p-6 flex flex-col items-center justify-center gap-4 bg-zinc-900 text-white">

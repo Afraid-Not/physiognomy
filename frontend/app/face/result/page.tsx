@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import HeroCard from "../../components/HeroCard";
 
 interface AnalysisResult {
   summary: string;
@@ -34,9 +35,12 @@ const scoreLabel = (score: number) => {
   return "주의";
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ResultPage = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [hero, setHero] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -44,10 +48,12 @@ const ResultPage = () => {
   useEffect(() => {
     const stored = sessionStorage.getItem("analysisResult");
     const image = sessionStorage.getItem("uploadedImage");
+    const heroStored = sessionStorage.getItem("heroMatch");
     if (!stored) {
-      router.push("/");
+      router.push("/face");
       return;
     }
+    if (heroStored) setHero(JSON.parse(heroStored));
     setResult(JSON.parse(stored));
     if (image) setUploadedImage(image);
   }, [router]);
@@ -139,6 +145,13 @@ const ResultPage = () => {
         ref={reportRef}
         className="w-full max-w-4xl bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden"
       >
+        {/* 위인 매칭 카드 */}
+        {hero && (
+          <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
+            <HeroCard hero={hero} />
+          </div>
+        )}
+
         {/* 상단: 사진(좌) + 요약(우) */}
         <div className="flex flex-col sm:flex-row gap-0 border-b border-zinc-200 dark:border-zinc-800">
           {/* 좌: 사진 + 종합점수 */}

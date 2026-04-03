@@ -104,6 +104,8 @@ const CombinedPage = () => {
 
             if (msg.type === "classified") {
               classifiedData = msg.data;
+              if (msg.hero)
+                sessionStorage.setItem("heroMatch", JSON.stringify(msg.hero));
               setLoadingStep("종합 운세를 작성하고 있어요...");
             } else if (msg.type === "chunk") {
               setLoadingStep("종합 분석을 작성하고 있어요...");

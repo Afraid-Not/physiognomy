@@ -84,6 +84,8 @@ const FacePage = () => {
             const msg = JSON.parse(json_str);
 
             if (msg.type === "classified") {
+              if (msg.hero)
+                sessionStorage.setItem("heroMatch", JSON.stringify(msg.hero));
               setLoadingStep("관상 지식을 찾고 있어요...");
             } else if (msg.type === "chunk") {
               setLoadingStep("관상 분석을 작성하고 있어요...");

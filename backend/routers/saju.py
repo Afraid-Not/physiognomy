@@ -15,6 +15,7 @@ from services.saju_scoring import compute_saju_scores
 from services.rag import search_saju_knowledge
 from services.llm import generate_saju_analysis, generate_saju_analysis_stream
 from services.history import save_history
+from services.hero_match import match_hero_saju
 from middleware.auth import get_current_user
 
 router = APIRouter()
@@ -58,6 +59,9 @@ async def analyze_saju_endpoint(req: SajuRequest, user: dict = Depends(get_curre
     # Step 3: RAG 지식 검색
     knowledge = await search_saju_knowledge(saju_data)
 
+    # 위인 매칭
+    hero = match_hero_saju(saju_data, scores)
+
     # Step 4: LLM 분석 생성
     if req.stream:
         def event_stream():
@@ -72,6 +76,7 @@ async def analyze_saju_endpoint(req: SajuRequest, user: dict = Depends(get_curre
                     "dayun": saju_data["dayun"],
                     "scores": scores,
                 },
+                "hero": hero,
             }
             yield f"data: {json.dumps(classified, ensure_ascii=False)}\n\n"
 
@@ -116,11 +121,12 @@ async def analyze_saju_endpoint(req: SajuRequest, user: dict = Depends(get_curre
             "birth_day": req.birth_day, "birth_hour": req.birth_hour,
             "gender": req.gender,
         },
-        result_data={"saju": saju_data, "scores": scores, "analysis": result},
+        result_data={"saju": saju_data, "scores": scores, "analysis": result, "hero": hero},
     )
 
     return {
         "saju": saju_data,
         "scores": scores,
         "analysis": result,
+        "hero": hero,
     }

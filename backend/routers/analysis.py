@@ -10,6 +10,7 @@ from services.rag import search_knowledge
 from services.llm import generate_analysis, generate_analysis_stream
 from services.history import save_history
 from services.storage import upload_face_image
+from services.hero_match import match_hero_face
 from middleware.auth import get_current_user
 
 router = APIRouter()
@@ -53,6 +54,9 @@ async def analyze_face(
     # Step 3: 하이브리드 검색으로 관상 지식 조회
     knowledge = await search_knowledge(features)
 
+    # 위인 매칭
+    hero = match_hero_face(features)
+
     # Step 4: LLM 분석 생성
     if stream:
         # SSE 스트리밍
@@ -64,6 +68,7 @@ async def analyze_face(
                     {"category": f.category, "label": f.label, "confidence": f.confidence}
                     for f in features
                 ],
+                "hero": hero,
             }
             yield f"data: {json.dumps(classified, ensure_ascii=False)}\n\n"
 
@@ -102,8 +107,9 @@ async def analyze_face(
         user_id=user["id"],
         analysis_type="face",
         input_data={},
-        result_data=result,
+        result_data={**result, "hero": hero},
         image_url=image_path,
     )
 
+    result["hero"] = hero
     return result

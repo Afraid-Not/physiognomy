@@ -21,6 +21,7 @@ from services.llm import (
 )
 from services.history import save_history
 from services.storage import upload_face_image
+from services.hero_match import match_hero_combined
 from middleware.auth import get_current_user
 
 router = APIRouter()
@@ -87,7 +88,10 @@ async def analyze_combined(
     # ── Step 4: 종합 RAG 검색 ──
     combined_knowledge = await search_combined_knowledge(face_features, saju_data)
 
-    # ── Step 5: 종합 LLM 분석 ──
+    # ── Step 5: 위인 매칭 ──
+    hero = match_hero_combined(face_features, saju_data, saju_scores)
+
+    # ── Step 6: 종합 LLM 분석 ──
     if stream:
         def event_stream():
             # 관상 + 사주 즉시 전송
@@ -109,6 +113,7 @@ async def analyze_combined(
                         "scores": saju_scores,
                     },
                 },
+                "hero": hero,
             }
             yield f"data: {json.dumps(classified, ensure_ascii=False)}\n\n"
 
@@ -143,7 +148,7 @@ async def analyze_combined(
             "birth_day": birth_day, "birth_hour": birth_hour,
             "gender": gender,
         },
-        result_data={"face": face_result, "saju": saju_data, "saju_scores": saju_scores, "combined": combined_result},
+        result_data={"face": face_result, "saju": saju_data, "saju_scores": saju_scores, "combined": combined_result, "hero": hero},
         image_url=image_path,
     )
 
@@ -152,4 +157,5 @@ async def analyze_combined(
         "saju": saju_data,
         "saju_scores": saju_scores,
         "combined": combined_result,
+        "hero": hero,
     }

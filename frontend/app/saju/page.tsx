@@ -94,6 +94,8 @@ const SajuPage = () => {
 
             if (msg.type === "classified") {
               sajuData = msg.data;
+              if (msg.hero)
+                sessionStorage.setItem("heroMatch", JSON.stringify(msg.hero));
               setLoadingStep("사주 지식을 찾고 있어요...");
             } else if (msg.type === "chunk") {
               setLoadingStep("사주 분석을 작성하고 있어요...");
