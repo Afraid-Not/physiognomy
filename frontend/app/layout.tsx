@@ -14,9 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "관상 분석 | Physiognomy AI",
+  title: "점.ZIP | AI 관상 · 사주 분석",
   description:
-    "AI 기반 관상 분석 서비스 - 사진을 업로드하면 AI가 관상을 분석해드립니다",
+    "AI 기반 관상 + 사주 분석 서비스 - 얼굴 사진과 생년월일로 운세를 봅니다",
+  icons: { icon: "/favicon.svg" },
 };
 
 const RootLayout = ({

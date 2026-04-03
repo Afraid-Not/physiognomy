@@ -117,10 +117,14 @@ const HomePage = () => {
             ))}
           </div>
 
-          <p className="text-xs text-zinc-300 dark:text-zinc-600 text-center">
-            본 서비스는 전통 관상학/명리학에 기반한 재미 목적의 분석이며, 과학적
-            근거가 아닙니다.
-          </p>
+          <div className="text-center px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
+            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+              본 서비스는 재미로 보는 운세입니다.
+            </p>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+              과학적 근거가 없으며, 결과에 의미를 두지 마세요!
+            </p>
+          </div>
         </main>
       </div>
     </AuthGuard>
