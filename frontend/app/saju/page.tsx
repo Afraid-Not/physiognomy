@@ -64,7 +64,7 @@ const SajuPage = () => {
           birth_hour: parseInt(hour),
           gender,
           stream: true,
-          turnstile_token: turnstileToken,
+          turnstile_token: turnstileToken ?? "",
         }),
       });
 

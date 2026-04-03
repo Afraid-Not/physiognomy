@@ -68,7 +68,7 @@ const CombinedPage = () => {
       formData.append("birth_minute", "0");
       formData.append("gender", gender);
       formData.append("stream", "true");
-      formData.append("turnstile_token", turnstileToken);
+      formData.append("turnstile_token", turnstileToken ?? "");
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
       const token = await getAccessToken();
