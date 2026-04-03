@@ -283,7 +283,7 @@ const SajuPage = () => {
 
         <button
           onClick={handleSubmit}
-          disabled={!turnstileToken || isLoading}
+          disabled={isLoading}
           className="w-full h-12 rounded-full bg-zinc-900 text-white font-medium text-base transition-colors hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 flex items-center justify-center gap-2"
         >
           {isLoading ? (

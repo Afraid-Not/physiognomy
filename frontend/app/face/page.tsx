@@ -211,7 +211,7 @@ const FacePage = () => {
 
         <button
           onClick={handleUpload}
-          disabled={!file || !turnstileToken || isLoading}
+          disabled={!file || isLoading}
           className="w-full max-w-sm h-12 rounded-full bg-zinc-900 text-white font-medium text-base transition-colors hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 flex items-center justify-center gap-2"
         >
           {isLoading ? (

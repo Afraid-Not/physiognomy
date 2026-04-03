@@ -31,8 +31,8 @@ async def verify_turnstile(token: str) -> bool:
 
 
 async def require_turnstile(token: str | None) -> None:
-    """토큰이 없거나 검증 실패 시 403 에러"""
+    """토큰이 있으면 검증, 없으면 스킵 (위젯 로드 실패 대비)"""
     if not token:
-        raise HTTPException(status_code=403, detail="캡챠 인증이 필요합니다.")
+        return  # 캡챠 위젯 미로드 시 허용
     if not await verify_turnstile(token):
         raise HTTPException(status_code=403, detail="캡챠 인증에 실패했습니다. 다시 시도해주세요.")
