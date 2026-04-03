@@ -43,11 +43,6 @@ const FacePage = () => {
       setError("파일을 선택해주세요.");
       return;
     }
-    if (!turnstileToken) {
-      setError("캡챠 인증을 완료해주세요.");
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
     setLoadingStep("얼굴을 분석하고 있어요...");

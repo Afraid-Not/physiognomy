@@ -44,11 +44,6 @@ const SajuPage = () => {
       setError("모든 항목을 입력해주세요.");
       return;
     }
-    if (!turnstileToken) {
-      setError("캡챠 인증을 완료해주세요.");
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
     setLoadingStep("사주를 계산하고 있어요...");
