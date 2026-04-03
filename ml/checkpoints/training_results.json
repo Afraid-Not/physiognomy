@@ -1,0 +1,147 @@
+{
+  "eye_type": {
+    "accuracy": 0.9778,
+    "n_classes": 11,
+    "classes": [
+      "공작안",
+      "도화안",
+      "보통눈",
+      "봉안",
+      "사안",
+      "삼백안",
+      "앵안",
+      "용안",
+      "음양안",
+      "학안",
+      "호안"
+    ],
+    "top_features": [
+      ["eye_asymmetry", 0.2031],
+      ["iris_vertical_pos", 0.1529],
+      ["eye_height_ratio", 0.1032],
+      ["eye_tilt_deg", 0.0984],
+      ["eye_aspect_ratio", 0.0847]
+    ]
+  },
+  "eyebrow_type": {
+    "accuracy": 0.9911,
+    "n_classes": 8,
+    "classes": [
+      "검미",
+      "농미",
+      "단미",
+      "보통눈썹",
+      "연미",
+      "일자눈썹",
+      "초승달눈썹",
+      "팔자눈썹"
+    ],
+    "top_features": [
+      ["brow_gap_ratio", 0.1492],
+      ["brow_thickness_ratio", 0.1324],
+      ["brow_curvature", 0.104],
+      ["brow_length_ratio", 0.0882],
+      ["brow_tilt_deg", 0.0748]
+    ]
+  },
+  "nose_type": {
+    "accuracy": 0.9867,
+    "n_classes": 7,
+    "classes": [
+      "단코",
+      "독수리코",
+      "들창코",
+      "매부리코",
+      "보통코",
+      "복코",
+      "주먹코"
+    ],
+    "top_features": [
+      ["nose_width_ratio", 0.1752],
+      ["nose_tip_angle", 0.1455],
+      ["nose_length_ratio", 0.1327],
+      ["eye_tilt_deg", 0.0701],
+      ["nose_bridge_depth", 0.0629]
+    ]
+  },
+  "mouth_type": {
+    "accuracy": 1.0,
+    "n_classes": 7,
+    "classes": [
+      "다문입",
+      "박입",
+      "받침입",
+      "보통입",
+      "복입",
+      "앵두입",
+      "일자입"
+    ],
+    "top_features": [
+      ["lip_thickness_ratio", 0.1919],
+      ["mouth_corner_angle", 0.1107],
+      ["mouth_width_ratio", 0.0934],
+      ["cheekbone_position", 0.0902],
+      ["lip_ratio", 0.0731]
+    ]
+  },
+  "forehead_type": {
+    "accuracy": 0.9933,
+    "n_classes": 4,
+    "classes": ["넓은이마", "높은이마", "보통이마", "좁은이마"],
+    "top_features": [
+      ["forehead_height_ratio", 0.2102],
+      ["forehead_width_ratio", 0.1779],
+      ["cheekbone_protrusion", 0.0742],
+      ["upper_lower_ratio", 0.0588],
+      ["brow_curvature", 0.0583]
+    ]
+  },
+  "chin_type": {
+    "accuracy": 0.9933,
+    "n_classes": 6,
+    "classes": ["V라인턱", "각턱", "긴턱", "둥근턱", "보통턱", "짧은턱"],
+    "top_features": [
+      ["jaw_width_ratio", 0.1904],
+      ["chin_length_ratio", 0.16],
+      ["chin_angle_deg", 0.1564],
+      ["mid_lower_ratio", 0.0982],
+      ["cheekbone_position", 0.0296]
+    ]
+  },
+  "face_shape": {
+    "accuracy": 0.9867,
+    "n_classes": 6,
+    "classes": ["각진형", "계란형", "긴형", "둥근형", "보통형", "역삼각형"],
+    "top_features": [
+      ["face_ratio", 0.2033],
+      ["chin_angle_deg", 0.2028],
+      ["brow_thickness_ratio", 0.0943],
+      ["upper_lower_ratio", 0.085],
+      ["jaw_width_ratio", 0.0683]
+    ]
+  },
+  "philtrum_type": {
+    "accuracy": 0.9956,
+    "n_classes": 3,
+    "classes": ["긴인중", "보통인중", "짧은인중"],
+    "top_features": [
+      ["philtrum_length_ratio", 0.4673],
+      ["lip_thickness_ratio", 0.0483],
+      ["mouth_width_ratio", 0.0388],
+      ["nose_length_ratio", 0.027],
+      ["mouth_corner_angle", 0.0231]
+    ]
+  },
+  "cheekbone_type": {
+    "accuracy": 0.9956,
+    "n_classes": 5,
+    "classes": ["낮은광대", "넓은광대", "높은광대", "보통광대", "평평한광대"],
+    "top_features": [
+      ["cheekbone_protrusion", 0.1661],
+      ["cheekbone_position", 0.1288],
+      ["forehead_curvature", 0.0863],
+      ["chin_protrusion", 0.0831],
+      ["forehead_width_ratio", 0.0647]
+    ]
+  }
+}

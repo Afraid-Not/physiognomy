@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+mediapipe
+opencv-python
+openai
+supabase
+python-multipart
+numpy
+python-dotenv
+pydantic

@@ -113,4 +113,5 @@ npm run dev
 ### `GET /health`
 
 서버 상태 확인. `{ "status": "ok" }` 반환.
+
 # physiognomy

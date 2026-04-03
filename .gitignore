@@ -1,0 +1,83 @@
+# ===========================
+# Python
+# ===========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.Python
+env/
+venv/
+.venv/
+.pytest_cache/
+.mypy_cache/
+
+# ===========================
+# Node.js / Next.js
+# ===========================
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+
+# ===========================
+# Environment
+# ===========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ===========================
+# ML Artifacts
+# ===========================
+ml/data/raw/
+ml/data/processed/
+ml/data/face-image-aihub/
+ml/checkpoints/*.pt
+ml/checkpoints/*.pth
+ml/checkpoints/*.onnx
+ml/checkpoints/*.pkl
+ml/checkpoints/*.joblib
+*.h5
+*.hdf5
+
+# ===========================
+# IDE
+# ===========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===========================
+# OS
+# ===========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===========================
+# AI Tools
+# ===========================
+.claude/
+
+# ===========================
+# Raw Dataset
+# ===========================
+026.*/
+
+# ===========================
+# Misc
+# ===========================
+*.log
+*.tmp
+.cache/
