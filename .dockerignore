@@ -1,0 +1,15 @@
+.git
+.env
+.env.*
+.claude/
+.vscode/
+.idea/
+node_modules/
+frontend/
+026.*/
+debug-captured/
+deployment/
+docs/
+ml/data/
+__pycache__/
+*.pyc

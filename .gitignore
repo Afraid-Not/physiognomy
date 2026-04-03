@@ -45,7 +45,7 @@ ml/checkpoints/*.pt
 ml/checkpoints/*.pth
 ml/checkpoints/*.onnx
 ml/checkpoints/*.pkl
-ml/checkpoints/*.joblib
+# ml/checkpoints/*.joblib — Railway 배포에 필요하므로 git 추적
 *.h5
 *.hdf5
 
