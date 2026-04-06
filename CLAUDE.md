@@ -93,13 +93,14 @@ Category selection + random draw (JSON body, optional auth)
 ### Request Flow - 종합 (POST /api/combined)
 
 ```
-Image + birth datetime + gender (multipart, requires auth)
+Image + birth datetime + gender + tarot_category (multipart, requires auth)
   -> 관상 pipeline (landmark -> classifier -> scoring)
   -> 사주 pipeline (saju -> saju_scoring)
-  -> services/hero_match.py  : combined matching (face 40% + saju 60% weighted traits)
-  -> services/rag.py         : combined knowledge search
-  -> services/llm.py         : GPT-4o-mini combined interpretation
-  -> routers/combined.py     : SSE stream with face + saju + combined results
+  -> 타로 pipeline (draw_three_card_spread -> tarot_scoring)
+  -> services/hero_match.py  : combined matching (face 30% + saju 40% + tarot 30% weighted traits)
+  -> services/rag.py         : combined knowledge search (face + saju + tarot keywords)
+  -> services/llm.py         : GPT-4o-mini combined interpretation (관상+사주+타로 통합)
+  -> routers/combined.py     : SSE stream with face + saju + tarot + combined results
 ```
 
 All routers post-process LLM output to force rule-based scores over any LLM-generated scores.
@@ -139,8 +140,8 @@ crawl.py -> extract_faces.py -> extract_ratios.py -> auto_label.py -> train.py -
 /saju/result           : saju analysis results
 /tarot                 : tarot category selection + card draw
 /tarot/result          : tarot analysis results (3-card spread display)
-/combined              : photo + birth input
-/combined/result       : combined analysis results
+/combined              : photo + birth input + tarot category selection
+/combined/result       : combined analysis results (관상+사주+타로)
 /mypage                : profile edit + history list
 /mypage/history/[id]   : single history detail view
 ```

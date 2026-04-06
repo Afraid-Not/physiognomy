@@ -221,7 +221,7 @@ const TarotResultPage = () => {
               <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
                 타로 분석 결과
               </h1>
-              <p className="mt-2 text-zinc-600 dark:text-zinc-400 text-sm">
+              <p className="mt-2 text-zinc-800 dark:text-zinc-400 text-sm">
                 {analysis.summary}
               </p>
             </div>
@@ -310,20 +310,39 @@ const TarotResultPage = () => {
                       key={idx}
                       className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
                     >
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 min-w-0 truncate">
-                          {interp.position} - {interp.card_name}
+                      <div className="text-center mb-2">
+                        <p className="text-[10px] text-zinc-400">
+                          {interp.position}
+                        </p>
+                        <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mt-0.5">
+                          {interp.card_name
+                            .replace(/\s*\(.*?\)/g, "")
+                            .replace(/\s*(역방향|정방향)/g, "")
+                            .trim()}
                         </h3>
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        {spread.cards[idx] && (
                           <span
-                            className="text-[10px] px-1.5 py-0.5 rounded-full text-white whitespace-nowrap"
+                            className={`inline-block text-[10px] px-2 py-0.5 rounded-full mt-1 ${
+                              spread.cards[idx].is_reversed
+                                ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                                : "bg-zinc-900 dark:bg-zinc-200 text-white dark:text-zinc-900"
+                            }`}
+                          >
+                            {spread.cards[idx].is_reversed
+                              ? "역방향"
+                              : "정방향"}
+                          </span>
+                        )}
+                        <div className="flex items-center justify-center gap-1.5 mt-1.5">
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded-full text-white"
                             style={{
                               backgroundColor: scoreColorHex(interp.score),
                             }}
                           >
                             {scoreLabel(interp.score)}
                           </span>
-                          <span className="text-xs font-mono text-zinc-400 whitespace-nowrap">
+                          <span className="text-xs font-mono text-zinc-400">
                             {interp.score.toFixed(1)}
                           </span>
                         </div>
@@ -337,7 +356,7 @@ const TarotResultPage = () => {
                           }}
                         />
                       </div>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      <p className="text-xs text-zinc-800 dark:text-zinc-400 leading-relaxed">
                         {interp.description}
                       </p>
                     </div>
@@ -352,7 +371,7 @@ const TarotResultPage = () => {
           <h2 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-2">
             종합 분석
           </h2>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+          <p className="text-sm text-zinc-800 dark:text-zinc-400 leading-relaxed">
             {analysis.overall}
           </p>
         </div>
@@ -368,7 +387,7 @@ const TarotResultPage = () => {
                 {analysis.fortune_advice.map((advice: string, idx: number) => (
                   <li
                     key={idx}
-                    className="text-xs text-zinc-600 dark:text-zinc-400 flex gap-2"
+                    className="text-xs text-zinc-800 dark:text-zinc-400 flex gap-2"
                   >
                     <span className="shrink-0 text-zinc-400">{idx + 1}.</span>
                     {advice}
@@ -382,7 +401,7 @@ const TarotResultPage = () => {
               <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-2">
                 행운 정보
               </h3>
-              <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-400">
+              <div className="space-y-1.5 text-xs text-zinc-800 dark:text-zinc-400">
                 <p>길한 색상: {analysis.lucky.color}</p>
                 <p>길한 방향: {analysis.lucky.direction}</p>
                 <p>행운의 숫자: {analysis.lucky.number}</p>

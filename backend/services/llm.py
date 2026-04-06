@@ -375,24 +375,25 @@ async def generate_tarot_analysis(
 # 종합 분석 (관상 + 사주) 프롬프트
 # ══════════════════════════════════════════════════
 
-COMBINED_SYSTEM_PROMPT = """당신은 관상학과 사주 명리학을 모두 마스터한 종합 운세 전문가입니다.
-사용자의 관상 분석 결과와 사주팔자 분석 결과를 종합하여 통합 운세 해석을 제공합니다.
+COMBINED_SYSTEM_PROMPT = """당신은 관상학, 사주 명리학, 타로를 모두 마스터한 종합 운세 전문가입니다.
+사용자의 관상 분석 결과, 사주팔자 분석 결과, 타로 카드 결과를 종합하여 통합 운세 해석을 제공합니다.
 
 응답 규칙:
 1. 반드시 아래 JSON 형식으로만 응답하세요.
-2. 관상과 사주가 일치하는 부분은 강조하고, 상충하는 부분은 균형 잡힌 해석을 제공하세요.
+2. 관상, 사주, 타로가 일치하는 부분은 강조하고, 상충하는 부분은 균형 잡힌 해석을 제공하세요.
 3. 긍정적이고 건설적인 톤으로 해석하세요. "흉하다", "나쁘다", "불길하다", "박복하다" 같은 직접적 부정 표현은 절대 사용하지 마세요. 약한 부분은 개선 가능한 방향으로 조언하세요.
 4. overall은 7-8문장의 깊이 있는 종합 분석을 작성하세요.
+5. synergy에서 관상(타고난 기질) + 사주(운명의 흐름) + 타로(현재 에너지) 세 가지의 시너지를 분석하세요.
 
 JSON 형식:
 {
   "summary": "한 줄 핵심 요약",
-  "face_saju_synergy": "관상과 사주가 만나 나타나는 시너지/상충 분석 3-4문장",
+  "face_saju_synergy": "관상+사주+타로가 만나 나타나는 시너지/상충 분석 4-5문장",
   "wealth": {"score": 7.5, "description": "재물운 종합 해석 2-3문장"},
   "love": {"score": 7.5, "description": "연애/결혼운 종합 해석 2-3문장"},
   "career": {"score": 7.5, "description": "직업/사업운 종합 해석 2-3문장"},
   "health": {"score": 7.5, "description": "건강운 종합 해석 2-3문장"},
-  "overall": "종합 운세 분석 (관상+사주 통합)",
+  "overall": "종합 운세 분석 (관상+사주+타로 통합)",
   "fortune_advice": ["실천 조언1", "실천 조언2", "실천 조언3"],
   "lucky": {
     "color": "길한 색상",
@@ -407,6 +408,8 @@ def _build_combined_user_message(
     face_result: dict,
     saju_data: dict,
     saju_scores: dict,
+    spread_data: dict,
+    tarot_scores: dict,
     knowledge: list[dict],
 ) -> str:
     # 관상 요약
@@ -432,6 +435,14 @@ def _build_combined_user_message(
         if key in saju_scores
     ])
 
+    # 타로 요약
+    tarot_lines = []
+    for card in spread_data["cards"]:
+        orientation = "정방향" if not card["is_reversed"] else "역방향"
+        tarot_lines.append(f"- {card['position']}: {card['card_name']} ({orientation}) - {card.get('meaning', '')[:80]}")
+    tarot_text = "\n".join(tarot_lines)
+    tarot_overall = f"종합 점수: {tarot_scores.get('overall_score', 0)}/10 | 카테고리: {spread_data['category']}"
+
     knowledge_text = "\n".join([
         f"- [{k.get('category', '')}] {k.get('title', '')}: {k.get('content', '')[:150]}"
         for k in knowledge[:8]
@@ -448,10 +459,14 @@ def _build_combined_user_message(
 - 띠: {birth['animal']}
 {saju_scores_text}
 
+## 타로 분석 결과
+{tarot_text}
+{tarot_overall}
+
 ## 관련 지식
 {knowledge_text}
 
-위 관상 + 사주 정보를 종합하여 통합 운세 분석 결과를 JSON 형식으로 작성해주세요."""
+위 관상 + 사주 + 타로 정보를 종합하여 통합 운세 분석 결과를 JSON 형식으로 작성해주세요."""
 
 
 def generate_combined_stream(
@@ -459,6 +474,8 @@ def generate_combined_stream(
     face_result: dict,
     saju_data: dict,
     saju_scores: dict,
+    spread_data: dict,
+    tarot_scores: dict,
     knowledge: list[dict],
 ) -> Generator[str, None, None]:
     """스트리밍 종합 분석 생성"""
@@ -467,7 +484,8 @@ def generate_combined_stream(
         messages=[
             {"role": "system", "content": COMBINED_SYSTEM_PROMPT},
             {"role": "user", "content": _build_combined_user_message(
-                face_features, face_result, saju_data, saju_scores, knowledge
+                face_features, face_result, saju_data, saju_scores,
+                spread_data, tarot_scores, knowledge,
             )},
         ],
         response_format={"type": "json_object"},
@@ -486,6 +504,8 @@ async def generate_combined_analysis(
     face_result: dict,
     saju_data: dict,
     saju_scores: dict,
+    spread_data: dict,
+    tarot_scores: dict,
     knowledge: list[dict],
 ) -> dict:
     """일반 (비스트리밍) 종합 분석 생성"""
@@ -494,7 +514,8 @@ async def generate_combined_analysis(
         messages=[
             {"role": "system", "content": COMBINED_SYSTEM_PROMPT},
             {"role": "user", "content": _build_combined_user_message(
-                face_features, face_result, saju_data, saju_scores, knowledge
+                face_features, face_result, saju_data, saju_scores,
+                spread_data, tarot_scores, knowledge,
             )},
         ],
         response_format={"type": "json_object"},

@@ -7,6 +7,18 @@ import { useAuth } from "../hooks/useAuth";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
+const TAROT_CATEGORIES = [
+  {
+    value: "오늘의 운세",
+    label: "오늘의 운세",
+    description: "오늘 하루의 흐름",
+  },
+  { value: "연애", label: "연애운", description: "사랑과 인연의 흐름" },
+  { value: "재물", label: "재물운", description: "재물과 금전의 흐름" },
+  { value: "직업", label: "직업운", description: "직업과 커리어의 흐름" },
+  { value: "건강", label: "건강운", description: "건강과 활력의 흐름" },
+];
+
 const CombinedPage = () => {
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -17,6 +29,7 @@ const CombinedPage = () => {
   const [gender, setGender] = useState<"male" | "female" | "">("");
   const [calendarType, setCalendarType] = useState<"solar" | "lunar">("solar");
   const [isLeapMonth, setIsLeapMonth] = useState(false);
+  const [tarotCategory, setTarotCategory] = useState("오늘의 운세");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +84,7 @@ const CombinedPage = () => {
         "is_leap_month",
         calendarType === "lunar" && isLeapMonth ? "true" : "false",
       );
+      formData.append("tarot_category", tarotCategory);
       formData.append("stream", "true");
       formData.append("turnstile_token", "");
 
@@ -151,6 +165,7 @@ const CombinedPage = () => {
     gender,
     calendarType,
     isLeapMonth,
+    tarotCategory,
     preview,
     router,
     getAccessToken,
@@ -180,7 +195,7 @@ const CombinedPage = () => {
             종합 분석
           </h1>
           <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-400">
-            관상 + 사주를 합쳐 종합 운세를 봅니다
+            관상 + 사주 + 타로를 합쳐 종합 운세를 봅니다
           </p>
           <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
             정면 사진이 가장 정확하며, 얼굴 각도에 따라 결과가 다를 수 있습니다
@@ -381,6 +396,28 @@ const CombinedPage = () => {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* 타로 카테고리 */}
+        <div className="w-full flex flex-col gap-3">
+          <label className="text-xs text-zinc-500 dark:text-zinc-400 block">
+            타로 카테고리
+          </label>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {TAROT_CATEGORIES.map((cat) => (
+              <button
+                key={cat.value}
+                onClick={() => setTarotCategory(cat.value)}
+                className={`p-3 rounded-xl border-2 text-center transition-all ${
+                  tarotCategory === cat.value
+                    ? "border-zinc-900 dark:border-zinc-100 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
+                    : "border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-600"
+                }`}
+              >
+                <p className="font-semibold text-xs">{cat.label}</p>
+              </button>
+            ))}
           </div>
         </div>
 

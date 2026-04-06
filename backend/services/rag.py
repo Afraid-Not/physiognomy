@@ -62,8 +62,9 @@ async def search_saju_knowledge(saju_data: dict) -> list[dict]:
 async def search_combined_knowledge(
     features: list[PhysiognomyFeature],
     saju_data: dict,
+    spread_data: dict | None = None,
 ) -> list[dict]:
-    """관상 + 사주 종합 검색"""
+    """관상 + 사주 + 타로 종합 검색"""
     # 관상 쿼리
     face_parts = [f"{f.category} {f.label}" for f in features]
     # 사주 쿼리
@@ -73,7 +74,13 @@ async def search_combined_knowledge(
         f"일간 {elements['day_element']}",
         f"{yongsin['strength']} 용신 {yongsin['yongsin']}",
     ]
-    query_text = " ".join(face_parts + saju_parts + ["종합 운세 재물운 연애운 직업운"])
+    # 타로 쿼리
+    tarot_parts = []
+    if spread_data:
+        for c in spread_data["cards"]:
+            orientation = "정방향" if not c["is_reversed"] else "역방향"
+            tarot_parts.append(f"{c['card_name']} {orientation} 타로")
+    query_text = " ".join(face_parts + saju_parts + tarot_parts + ["종합 운세 재물운 연애운 직업운"])
     return await _hybrid_search(query_text, 20)
 
 

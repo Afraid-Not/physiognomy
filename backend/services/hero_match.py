@@ -241,18 +241,35 @@ def match_hero_saju(saju_data: dict, scores: dict) -> dict:
     return _find_best_match(traits)
 
 
-def match_hero_combined(features: list, saju_data: dict, scores: dict) -> dict:
-    """종합 분석 → 위인 매칭 (관상 + 사주 특성 합산)"""
+def match_hero_combined(
+    features: list,
+    saju_data: dict,
+    scores: dict,
+    spread_data: dict | None = None,
+    tarot_scores: dict | None = None,
+) -> dict:
+    """종합 분석 → 위인 매칭 (관상 + 사주 + 타로 특성 합산)"""
     face_traits = _extract_traits_from_face(features)
     saju_traits = _extract_traits_from_saju(saju_data, scores)
 
-    # 합산 (사주 가중치 0.6, 관상 가중치 0.4)
-    all_keys = set(face_traits.keys()) | set(saju_traits.keys())
-    combined_traits = {}
-    for key in all_keys:
-        f_val = face_traits.get(key, 0.0)
-        s_val = saju_traits.get(key, 0.0)
-        combined_traits[key] = f_val * 0.4 + s_val * 0.6
+    if spread_data and tarot_scores:
+        tarot_traits = _extract_traits_from_tarot(spread_data, tarot_scores)
+        # 관상 0.3 + 사주 0.4 + 타로 0.3
+        all_keys = set(face_traits.keys()) | set(saju_traits.keys()) | set(tarot_traits.keys())
+        combined_traits = {}
+        for key in all_keys:
+            f_val = face_traits.get(key, 0.0)
+            s_val = saju_traits.get(key, 0.0)
+            t_val = tarot_traits.get(key, 0.0)
+            combined_traits[key] = f_val * 0.3 + s_val * 0.4 + t_val * 0.3
+    else:
+        # 타로 없이 기존 방식 (하위 호환)
+        all_keys = set(face_traits.keys()) | set(saju_traits.keys())
+        combined_traits = {}
+        for key in all_keys:
+            f_val = face_traits.get(key, 0.0)
+            s_val = saju_traits.get(key, 0.0)
+            combined_traits[key] = f_val * 0.4 + s_val * 0.6
 
     return _find_best_match(combined_traits)
 

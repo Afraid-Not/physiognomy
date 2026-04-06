@@ -4,6 +4,15 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import HeroCard from "../../components/HeroCard";
 
+interface TarotCard {
+  position: string;
+  card_number: number;
+  card_name: string;
+  card_name_en: string;
+  is_reversed: boolean;
+  element: string;
+}
+
 interface CombinedResultData {
   classified: {
     face: { features: { category: string; label: string; score: number }[] };
@@ -39,6 +48,22 @@ interface CombinedResultData {
         animal: string;
       };
       scores: { overall_score: number };
+    };
+    tarot?: {
+      spread: {
+        category: string;
+        cards: TarotCard[];
+      };
+      scores: {
+        overall_score: number;
+        card_scores: {
+          position: string;
+          card_name: string;
+          is_reversed: boolean;
+          adjusted_score: number;
+        }[];
+        fortune_scores: { luck: number; timing: number; energy: number };
+      };
     };
   };
   analysis: {
@@ -169,6 +194,7 @@ const CombinedResultPage = () => {
   const { classified, analysis } = result;
   const saju = classified.saju;
   const face = classified.face;
+  const tarot = classified.tarot;
   const fortuneItems = [
     { ...analysis.wealth, label: "재물운" },
     { ...analysis.love, label: "연애운" },
@@ -258,7 +284,7 @@ const CombinedResultPage = () => {
             </div>
             <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
               <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-2">
-                관상 + 사주 시너지
+                관상 + 사주 + 타로 시너지
               </h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 {analysis.face_saju_synergy}
@@ -309,6 +335,69 @@ const CombinedResultPage = () => {
             </span>
           </div>
         </div>
+
+        {/* 타로 스프레드 */}
+        {tarot && (
+          <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
+            <h2 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-1">
+              타로 스프레드
+            </h2>
+            <p className="text-[10px] text-zinc-400 mb-3">
+              {tarot.spread.category} | 종합{" "}
+              {tarot.scores.overall_score.toFixed(1)}/10
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              {tarot.spread.cards.map((card, idx) => {
+                const cardScore = tarot.scores.card_scores[idx];
+                return (
+                  <div
+                    key={card.position}
+                    className={`text-center p-3 rounded-xl border-2 ${
+                      card.is_reversed
+                        ? "border-zinc-400 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-900"
+                        : "border-zinc-900 dark:border-zinc-200 bg-white dark:bg-zinc-900"
+                    }`}
+                  >
+                    <p className="text-[10px] text-zinc-400 mb-1">
+                      {card.position}
+                    </p>
+                    <p
+                      className={`text-sm font-bold ${
+                        card.is_reversed
+                          ? "text-zinc-500 dark:text-zinc-400"
+                          : "text-zinc-900 dark:text-zinc-100"
+                      }`}
+                    >
+                      {card.card_name}
+                    </p>
+                    <p className="text-[10px] text-zinc-400 mt-0.5">
+                      {card.card_name_en}
+                    </p>
+                    <span
+                      className={`inline-block text-[10px] px-2 py-0.5 rounded-full mt-1.5 ${
+                        card.is_reversed
+                          ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                          : "bg-zinc-900 dark:bg-zinc-200 text-white dark:text-zinc-900"
+                      }`}
+                    >
+                      {card.is_reversed ? "역방향" : "정방향"}
+                    </span>
+                    {cardScore && (
+                      <p
+                        className="text-xs font-mono mt-1"
+                        style={{
+                          color: scoreColorHex(cardScore.adjusted_score),
+                        }}
+                      >
+                        {cardScore.adjusted_score.toFixed(1)}/10
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* 운세 상세 */}
         <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
