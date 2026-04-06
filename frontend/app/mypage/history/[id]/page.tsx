@@ -19,6 +19,7 @@ const TYPE_LABELS: Record<string, string> = {
   face: "관상 분석",
   saju: "사주 분석",
   combined: "종합 분석",
+  tarot: "타로 분석",
 };
 
 const HistoryDetailPage = () => {
@@ -81,6 +82,14 @@ const HistoryDetailPage = () => {
       if (data.image_signed_url)
         sessionStorage.setItem("uploadedImage", data.image_signed_url);
       router.push("/combined/result");
+    } else if (data.type === "tarot") {
+      sessionStorage.setItem("tarotResult", JSON.stringify(data.result_data));
+      if (data.result_data.hero)
+        sessionStorage.setItem(
+          "heroMatch",
+          JSON.stringify((data.result_data as Record<string, unknown>).hero),
+        );
+      router.push("/tarot/result");
     }
   };
 

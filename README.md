@@ -1,6 +1,6 @@
 # 점zip (Physiognomy AI)
 
-AI 기반 관상 + 사주팔자 분석 웹 서비스. 얼굴 사진과 생년월일을 입력하면 관상 분석, 사주 분석, 종합 운세 분석까지 자동으로 수행합니다.
+AI 기반 관상 + 사주팔자 + 타로 분석 웹 서비스. 얼굴 사진, 생년월일, 타로 카드로 관상 분석, 사주 분석, 타로 분석, 종합 운세 분석을 수행합니다.
 
 **Live**: https://zeomzip.com (프론트엔드 상시 가동, 백엔드는 필요 시 활성화)
 
@@ -18,6 +18,13 @@ AI 기반 관상 + 사주팔자 분석 웹 서비스. 얼굴 사진과 생년월
 - 오행 분석 (목/화/토/금/수 비율), 십신 분석, 용신/희신 판단
 - 대운/세운 흐름 표시
 - 한국 표준시 보정 (서머타임, 1954~1961 UTC+8:30, 경도 보정)
+
+### 타로 분석
+
+- 메이저 아르카나 22장 기반 쓰리카드 스프레드 (과거/현재/미래)
+- 5개 카테고리: 연애운, 재물운, 직업운, 건강운, 오늘의 운세
+- 카드별 정방향/역방향 해석 + 카테고리별 특화 해석
+- 규칙 기반 점수 산정 (카드별 base score + 역방향 보정 + 위치 가중치)
 
 ### 종합 분석
 
@@ -65,6 +72,7 @@ physiognomy/
 │   ├── routers/
 │   │   ├── analysis.py          # POST /api/analyze (관상)
 │   │   ├── saju.py              # POST /api/saju (사주)
+│   │   ├── tarot.py             # POST /api/tarot (타로)
 │   │   ├── combined.py          # POST /api/combined (종합)
 │   │   ├── profile.py           # GET/PUT /api/profile
 │   │   └── history.py           # GET /api/history
@@ -74,6 +82,8 @@ physiognomy/
 │   │   ├── scoring.py           # 관상 규칙 기반 점수
 │   │   ├── saju.py              # lunar-python 사주 계산 + 한국어 매핑
 │   │   ├── saju_scoring.py      # 사주 규칙 기반 점수
+│   │   ├── tarot.py             # 타로 카드 데이터 + 뽑기
+│   │   ├── tarot_scoring.py     # 타로 규칙 기반 점수
 │   │   ├── hero_match.py        # 한국 위인 매칭
 │   │   ├── rag.py               # Supabase 하이브리드 검색
 │   │   ├── llm.py               # OpenAI 분석 생성
@@ -86,6 +96,7 @@ physiognomy/
 │   │   ├── signup/              # 회원가입 페이지
 │   │   ├── face/                # 관상 분석 + 결과
 │   │   ├── saju/                # 사주 분석 + 결과
+│   │   ├── tarot/               # 타로 분석 + 결과
 │   │   ├── combined/            # 종합 분석 + 결과
 │   │   ├── mypage/              # 프로필 + 이력 조회
 │   │   ├── privacy/             # 개인정보처리방침
@@ -139,6 +150,7 @@ Supabase SQL Editor에서 마이그레이션 실행:
 
 ```bash
 supabase/migrations/001_auth_profiles_history.sql
+supabase/migrations/002_tarot_type.sql
 ```
 
 ### Running
@@ -179,6 +191,10 @@ npm run dev
 ### `POST /api/saju`
 
 사주 분석. JSON body: `{ birth_year, birth_month, birth_day, birth_hour, gender, stream, turnstile_token }`.
+
+### `POST /api/tarot`
+
+타로 분석. JSON body: `{ category, stream, turnstile_token }`. category는 "연애", "재물", "직업", "건강", "오늘의 운세" 중 택1.
 
 ### `POST /api/combined`
 

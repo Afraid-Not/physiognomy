@@ -257,6 +257,32 @@ def match_hero_combined(features: list, saju_data: dict, scores: dict) -> dict:
     return _find_best_match(combined_traits)
 
 
+def _extract_traits_from_tarot(spread_data: dict, scores: dict) -> dict[str, float]:
+    """타로 카드 → 특성 점수"""
+    traits: dict[str, float] = {}
+
+    for card_info in spread_data["cards"]:
+        card_traits = card_info.get("traits", {})
+        reversal_factor = 0.7 if card_info["is_reversed"] else 1.0
+        for key, val in card_traits.items():
+            adjusted = val * reversal_factor
+            traits[key] = max(traits.get(key, 0), adjusted)
+
+    # overall_score 기반 기본값
+    overall_norm = scores.get("overall_score", 5.0) / 10.0
+    traits.setdefault("career", overall_norm)
+    traits.setdefault("wealth", overall_norm)
+    traits.setdefault("love", overall_norm)
+
+    return traits
+
+
+def match_hero_tarot(spread_data: dict, scores: dict) -> dict:
+    """타로 분석 결과 → 위인 매칭"""
+    traits = _extract_traits_from_tarot(spread_data, scores)
+    return _find_best_match(traits)
+
+
 def _find_best_match(traits: dict[str, float]) -> dict:
     """특성 → 가장 유사한 위인 반환"""
     best_hero = HEROES[0]

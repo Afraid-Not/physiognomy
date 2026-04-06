@@ -77,6 +77,17 @@ async def search_combined_knowledge(
     return await _hybrid_search(query_text, 20)
 
 
+async def search_tarot_knowledge(spread_data: dict) -> list[dict]:
+    """타로 카드 기반 하이브리드 검색"""
+    cards = spread_data["cards"]
+    parts = []
+    for c in cards:
+        orientation = "정방향" if not c["is_reversed"] else "역방향"
+        parts.append(f"{c['card_name']} {orientation} {spread_data['category']} 타로 해석")
+    query_text = " ".join(parts)
+    return await _hybrid_search(query_text, 10)
+
+
 async def _hybrid_search(query_text: str, match_count: int) -> list[dict]:
     """하이브리드 검색 공통 함수"""
     query_embedding = _get_openai().embeddings.create(

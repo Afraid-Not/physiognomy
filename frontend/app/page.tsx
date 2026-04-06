@@ -44,6 +44,26 @@ const menuItems = [
     ),
   },
   {
+    title: "타로 분석",
+    description: "타로 카드로 오늘의 운세를 봅니다",
+    href: "/tarot",
+    icon: (
+      <svg
+        className="w-8 h-8"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25M6.75 17.25L5.25 19.5l-1.5-2.25"
+        />
+      </svg>
+    ),
+  },
+  {
     title: "종합 분석",
     description: "관상 + 사주를 합쳐 종합 운세를 봅니다",
     href: "/combined",
@@ -76,7 +96,7 @@ const HomePage = () => {
             점zip
           </h1>
           <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-400">
-            관상과 사주로 보는 나의 운명
+            관상, 사주, 타로로 보는 나의 운명
           </p>
         </div>
 
@@ -129,19 +149,16 @@ const HomePage = () => {
             추후 추가 예정
           </p>
           <div className="flex flex-wrap gap-2">
-            {[
-              "타로 분석",
-              "별자리 분석",
-              "혈액형 분석",
-              "MBTI 포함 종합분석",
-            ].map((label) => (
-              <span
-                key={label}
-                className="px-3 py-1 text-xs rounded-full bg-zinc-200/70 dark:bg-zinc-700/50 text-zinc-500 dark:text-zinc-400"
-              >
-                {label}
-              </span>
-            ))}
+            {["별자리 분석", "혈액형 분석", "MBTI 포함 종합분석"].map(
+              (label) => (
+                <span
+                  key={label}
+                  className="px-3 py-1 text-xs rounded-full bg-zinc-200/70 dark:bg-zinc-700/50 text-zinc-500 dark:text-zinc-400"
+                >
+                  {label}
+                </span>
+              ),
+            )}
           </div>
         </div>
 

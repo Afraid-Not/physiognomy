@@ -29,6 +29,8 @@ class SajuRequest(BaseModel):
     birth_hour: int = Field(..., ge=0, le=23)
     birth_minute: int = Field(0, ge=0, le=59)
     gender: str = Field(..., pattern="^(male|female)$")
+    is_lunar: bool = False
+    is_leap_month: bool = False
     stream: bool = False
     turnstile_token: str = ""
 
@@ -42,17 +44,20 @@ async def analyze_saju_endpoint(req: SajuRequest, user: dict | None = Depends(ge
     # Turnstile 캡챠 검증
     await require_turnstile(req.turnstile_token)
 
-    # 날짜 유효성 검증
-    try:
-        date(req.birth_year, req.birth_month, req.birth_day)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="유효하지 않은 날짜입니다.")
+    # 날짜 유효성 검증 (양력일 때만 date() 검증)
+    if not req.is_lunar:
+        try:
+            date(req.birth_year, req.birth_month, req.birth_day)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="유효하지 않은 날짜입니다.")
 
     # Step 1: 사주 원국 계산
     saju_result = analyze_saju(
         req.birth_year, req.birth_month, req.birth_day,
         req.birth_hour, req.birth_minute,
         gender=req.gender,
+        is_lunar=req.is_lunar,
+        is_leap_month=req.is_leap_month,
     )
     saju_data = saju_result.to_dict()
 
@@ -111,7 +116,8 @@ async def analyze_saju_endpoint(req: SajuRequest, user: dict | None = Depends(ge
                         input_data={
                             "birth_year": req.birth_year, "birth_month": req.birth_month,
                             "birth_day": req.birth_day, "birth_hour": req.birth_hour,
-                            "gender": req.gender,
+                            "gender": req.gender, "is_lunar": req.is_lunar,
+                            "is_leap_month": req.is_leap_month,
                         },
                         result_data={"saju": saju_data, "scores": scores, "analysis": parsed, "hero": hero},
                     )

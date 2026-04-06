@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Turnstile } from "@marsidev/react-turnstile";
 
 import { useAuth } from "../hooks/useAuth";
 
@@ -12,9 +11,7 @@ const FacePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const turnstileRef = useRef<any>(null);
   const router = useRouter();
   const { getAccessToken } = useAuth();
 
@@ -50,7 +47,7 @@ const FacePage = () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("turnstile_token", turnstileToken ?? "");
+      formData.append("turnstile_token", "");
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
       const token = await getAccessToken();
@@ -114,10 +111,8 @@ const FacePage = () => {
     } finally {
       setIsLoading(false);
       setLoadingStep("");
-      setTurnstileToken(null);
-      turnstileRef.current?.reset();
     }
-  }, [file, preview, router, getAccessToken, turnstileToken]);
+  }, [file, preview, router, getAccessToken]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
@@ -195,14 +190,6 @@ const FacePage = () => {
             <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
           </div>
         )}
-
-        <Turnstile
-          ref={turnstileRef}
-          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
-          onSuccess={setTurnstileToken}
-          onExpire={() => setTurnstileToken(null)}
-          options={{ theme: "light", size: "normal" }}
-        />
 
         <button
           onClick={handleUpload}

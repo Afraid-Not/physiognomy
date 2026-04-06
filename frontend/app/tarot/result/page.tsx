@@ -4,63 +4,53 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import HeroCard from "../../components/HeroCard";
 
-interface CombinedResultData {
-  classified: {
-    face: { features: { category: string; label: string; score: number }[] };
-    saju: {
-      pillars: Record<
-        string,
-        {
-          gan: string;
-          zhi: string;
-          ganzhi: string;
-          gan_element: string;
-          zhi_element: string;
-          sipsin: string;
-        }
-      >;
-      elements: {
-        counts: Record<string, number>;
-        percentages: Record<string, number>;
-        day_element: string;
-      };
-      yongsin: {
-        strength: string;
-        yongsin_label: string;
-        heesin_label: string;
-      };
-      birth_info: {
-        year: number;
-        month: number;
-        day: number;
-        hour: number;
-        gender: string;
-        lunar_date: string;
-        animal: string;
-      };
-      scores: { overall_score: number };
+interface CardInterpretation {
+  position: string;
+  card_name: string;
+  description: string;
+  score: number;
+}
+
+interface TarotResultData {
+  spread: {
+    category: string;
+    cards: {
+      position: string;
+      card_number: number;
+      card_name: string;
+      card_name_en: string;
+      is_reversed: boolean;
+      upright_keywords: string;
+      reversed_keywords: string;
+      element: string;
+      meaning: string;
+    }[];
+  };
+  scores: {
+    category: string;
+    overall_score: number;
+    card_scores: {
+      position: string;
+      card_name: string;
+      is_reversed: boolean;
+      base_score: number;
+      adjusted_score: number;
+    }[];
+    fortune_scores: {
+      luck: number;
+      timing: number;
+      energy: number;
     };
   };
   analysis: {
     summary: string;
-    face_saju_synergy: string;
-    wealth: { score: number; description: string };
-    love: { score: number; description: string };
-    career: { score: number; description: string };
-    health: { score: number; description: string };
+    card_interpretations: CardInterpretation[];
     overall: string;
     fortune_advice: string[];
     lucky: { color: string; direction: string; number: string };
+    overall_score?: number;
   };
 }
-
-const ELEMENT_COLORS: Record<string, string> = {
-  목: "#22c55e",
-  화: "#ef4444",
-  토: "#eab308",
-  금: "#a1a1aa",
-  수: "#3b82f6",
-};
 
 const scoreColorHex = (score: number) => {
   if (score >= 8) return "#10b981";
@@ -76,12 +66,15 @@ const scoreLabel = (score: number) => {
   return "주의";
 };
 
-const PILLAR_NAMES = ["시주", "일주", "월주", "년주"];
-const PILLAR_KEYS = ["hour", "day", "month", "year"];
+const ELEMENT_LABELS: Record<string, string> = {
+  풍: "Air",
+  화: "Fire",
+  수: "Water",
+  토: "Earth",
+};
 
-const CombinedResultPage = () => {
-  const [result, setResult] = useState<CombinedResultData | null>(null);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+const TarotResultPage = () => {
+  const [result, setResult] = useState<TarotResultData | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [hero, setHero] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -89,22 +82,20 @@ const CombinedResultPage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("combinedResult");
-    const image = sessionStorage.getItem("uploadedImage");
+    const stored = sessionStorage.getItem("tarotResult");
     const heroStored = sessionStorage.getItem("heroMatch");
     if (!stored) {
-      router.push("/combined");
+      router.push("/tarot");
       return;
     }
     setResult(JSON.parse(stored));
-    if (image) setUploadedImage(image);
     if (heroStored) setHero(JSON.parse(heroStored));
   }, [router]);
 
   const handleRetry = () => {
-    sessionStorage.removeItem("combinedResult");
-    sessionStorage.removeItem("uploadedImage");
-    router.push("/combined");
+    sessionStorage.removeItem("tarotResult");
+    sessionStorage.removeItem("heroMatch");
+    router.push("/tarot");
   };
 
   const handleSavePdf = async () => {
@@ -129,7 +120,7 @@ const CombinedResultPage = () => {
         pdf.addImage(imgData, "PNG", 0, -yOffset, imgWidth, imgHeight);
         yOffset += pageHeight;
       }
-      pdf.save("종합분석_결과.pdf");
+      pdf.save("타로분석_결과.pdf");
     } catch (err) {
       console.error("PDF 저장 실패:", err);
     } finally {
@@ -166,23 +157,10 @@ const CombinedResultPage = () => {
     );
   }
 
-  const { classified, analysis } = result;
-  const saju = classified.saju;
-  const face = classified.face;
-  const fortuneItems = [
-    { ...analysis.wealth, label: "재물운" },
-    { ...analysis.love, label: "연애운" },
-    { ...analysis.career, label: "직업운" },
-    { ...analysis.health, label: "건강운" },
-  ];
-  const avgScore =
-    fortuneItems.reduce((s, f) => s + f.score, 0) / fortuneItems.length;
+  const { spread, scores, analysis } = result;
 
   return (
     <div className="flex flex-col items-center flex-1 p-4">
-      <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-3 text-center">
-        정면 사진이 가장 정확하며, 얼굴 각도에 따라 결과가 다를 수 있습니다
-      </p>
       <div
         ref={reportRef}
         className="w-full max-w-4xl bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden"
@@ -194,40 +172,31 @@ const CombinedResultPage = () => {
           </div>
         )}
 
-        {/* 상단 */}
+        {/* 상단: 카테고리 + 종합 점수 */}
         <div className="flex flex-col sm:flex-row gap-0 border-b border-zinc-200 dark:border-zinc-800">
           <div className="sm:w-1/3 p-6 flex flex-col items-center justify-center gap-4 bg-zinc-900 text-white">
-            {uploadedImage && (
-              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-zinc-600">
-                <img
-                  src={uploadedImage}
-                  alt="분석된 사진"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
             <div className="text-center">
-              <p className="text-xs text-zinc-400">
-                {saju.birth_info.lunar_date}
-              </p>
-              <p className="text-xs text-zinc-400 mt-1">
-                {saju.birth_info.animal}띠 |{" "}
-                {saju.birth_info.gender === "male" ? "남" : "여"}
-              </p>
+              <p className="text-xs text-zinc-400">타로 카테고리</p>
+              <p className="text-lg font-bold mt-1">{spread.category}</p>
             </div>
             <div className="text-center">
               <div className="flex items-baseline justify-center gap-1">
                 <span className="text-4xl font-bold">
-                  {avgScore.toFixed(1)}
+                  {scores.overall_score.toFixed(1)}
                 </span>
                 <span className="text-zinc-400 text-lg">/10</span>
               </div>
               <p className="text-xs text-zinc-400 mt-1">종합 점수</p>
             </div>
+            {/* 미니 바 */}
             <div className="w-full space-y-1.5 px-2">
-              {fortuneItems.map((item) => (
+              {[
+                { label: "행운", score: scores.fortune_scores.luck },
+                { label: "타이밍", score: scores.fortune_scores.timing },
+                { label: "에너지", score: scores.fortune_scores.energy },
+              ].map((item) => (
                 <div key={item.label} className="flex items-center gap-2">
-                  <span className="text-[10px] text-zinc-400 w-12 text-right shrink-0">
+                  <span className="text-[10px] text-zinc-400 w-14 text-right shrink-0">
                     {item.label}
                   </span>
                   <div className="flex-1 h-1.5 bg-zinc-700 rounded-full">
@@ -250,106 +219,133 @@ const CombinedResultPage = () => {
           <div className="sm:w-2/3 p-6 flex flex-col justify-center gap-4">
             <div>
               <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                종합 운세 분석
+                타로 분석 결과
               </h1>
               <p className="mt-2 text-zinc-600 dark:text-zinc-400 text-sm">
                 {analysis.summary}
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-              <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-2">
-                관상 + 사주 시너지
-              </h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                {analysis.face_saju_synergy}
-              </p>
-            </div>
           </div>
         </div>
 
-        {/* 사주 원국 미니 */}
+        {/* 쓰리카드 스프레드 */}
         <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
           <h2 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-3">
-            사주 원국
+            쓰리카드 스프레드
           </h2>
-          <div className="grid grid-cols-4 gap-2">
-            {PILLAR_KEYS.map((key, idx) => {
-              const p = saju.pillars[key];
+          <div className="grid grid-cols-3 gap-3">
+            {spread.cards.map((card, idx) => {
+              const cardScore = scores.card_scores[idx];
               return (
                 <div
-                  key={key}
-                  className="text-center p-2 rounded-lg border border-zinc-200 dark:border-zinc-800"
+                  key={card.position}
+                  className={`text-center p-4 rounded-xl border-2 ${
+                    card.is_reversed
+                      ? "border-zinc-400 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-900"
+                      : "border-zinc-900 dark:border-zinc-200 bg-white dark:bg-zinc-900"
+                  }`}
                 >
-                  <p className="text-[10px] text-zinc-400">
-                    {PILLAR_NAMES[idx]}
+                  <p className="text-[10px] text-zinc-400 mb-2">
+                    {card.position}
                   </p>
-                  <div className="flex flex-col items-center">
+                  <p className="text-xs text-zinc-500 mb-1">
+                    {card.card_number}번
+                  </p>
+                  <p
+                    className={`text-lg font-bold ${
+                      card.is_reversed
+                        ? "text-zinc-500 dark:text-zinc-400"
+                        : "text-zinc-900 dark:text-zinc-100"
+                    }`}
+                  >
+                    {card.card_name}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 mt-0.5">
+                    {card.card_name_en}
+                  </p>
+                  <div className="mt-2 flex items-center justify-center gap-1">
                     <span
-                      className="text-base font-bold"
-                      style={{ color: ELEMENT_COLORS[p.gan_element] }}
+                      className={`text-[10px] px-2 py-0.5 rounded-full ${
+                        card.is_reversed
+                          ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                          : "bg-zinc-900 dark:bg-zinc-200 text-white dark:text-zinc-900"
+                      }`}
                     >
-                      {p.gan}
-                    </span>
-                    <span
-                      className="text-base font-bold"
-                      style={{ color: ELEMENT_COLORS[p.zhi_element] }}
-                    >
-                      {p.zhi}
+                      {card.is_reversed ? "역방향" : "정방향"}
                     </span>
                   </div>
-                  <p className="text-[10px] text-zinc-500">{p.sipsin}</p>
+                  <p className="text-[10px] text-zinc-400 mt-2">
+                    {card.element} (
+                    {ELEMENT_LABELS[card.element] ?? card.element})
+                  </p>
+                  {cardScore && (
+                    <div className="mt-2">
+                      <span
+                        className="text-xs font-mono"
+                        style={{
+                          color: scoreColorHex(cardScore.adjusted_score),
+                        }}
+                      >
+                        {cardScore.adjusted_score.toFixed(1)}/10
+                      </span>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
-          <div className="mt-2 text-center">
-            <span className="text-xs text-zinc-500">
-              일간: {saju.elements.day_element} | {saju.yongsin.strength} |{" "}
-              {saju.yongsin.yongsin_label}
-            </span>
-          </div>
         </div>
 
-        {/* 운세 상세 */}
-        <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {fortuneItems.map((item) => (
-              <div
-                key={item.label}
-                className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
-                    {item.label}
-                  </h3>
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="text-[10px] px-1.5 py-0.5 rounded-full text-white"
-                      style={{ backgroundColor: scoreColorHex(item.score) }}
+        {/* 카드별 해석 */}
+        {analysis.card_interpretations &&
+          analysis.card_interpretations.length > 0 && (
+            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
+              <h2 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-3">
+                카드별 해석
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {analysis.card_interpretations.map(
+                  (interp: CardInterpretation, idx: number) => (
+                    <div
+                      key={idx}
+                      className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
                     >
-                      {scoreLabel(item.score)}
-                    </span>
-                    <span className="text-xs font-mono text-zinc-400">
-                      {item.score.toFixed(1)}/10
-                    </span>
-                  </div>
-                </div>
-                <div className="w-full h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full mb-2">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${item.score * 10}%`,
-                      backgroundColor: scoreColorHex(item.score),
-                    }}
-                  />
-                </div>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                  {item.description}
-                </p>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
+                          {interp.position} - {interp.card_name}
+                        </h3>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded-full text-white"
+                            style={{
+                              backgroundColor: scoreColorHex(interp.score),
+                            }}
+                          >
+                            {scoreLabel(interp.score)}
+                          </span>
+                          <span className="text-xs font-mono text-zinc-400">
+                            {interp.score.toFixed(1)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-full h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full mb-2">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${interp.score * 10}%`,
+                            backgroundColor: scoreColorHex(interp.score),
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        {interp.description}
+                      </p>
+                    </div>
+                  ),
+                )}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          )}
 
         {/* 종합 분석 */}
         <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
@@ -369,7 +365,7 @@ const CombinedResultPage = () => {
                 실천 조언
               </h3>
               <ul className="space-y-1.5">
-                {analysis.fortune_advice.map((advice, idx) => (
+                {analysis.fortune_advice.map((advice: string, idx: number) => (
                   <li
                     key={idx}
                     className="text-xs text-zinc-600 dark:text-zinc-400 flex gap-2"
@@ -395,10 +391,11 @@ const CombinedResultPage = () => {
           )}
         </div>
 
+        {/* 푸터 */}
         <div className="px-6 pb-4 text-center">
           <p className="text-[10px] text-zinc-300 dark:text-zinc-600">
-            Physiognomy AI - 본 결과는 전통 관상학/명리학에 기반한 재미 목적의
-            분석이며, 과학적 근거가 아닙니다.
+            Physiognomy AI - 본 결과는 재미 목적의 타로 해석이며, 과학적 근거가
+            아닙니다.
           </p>
         </div>
       </div>
@@ -411,7 +408,28 @@ const CombinedResultPage = () => {
           className="flex-1 h-12 rounded-full bg-zinc-900 text-white font-medium transition-colors hover:bg-zinc-700 disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 flex items-center justify-center gap-2"
         >
           {isSaving ? (
-            "저장 중..."
+            <>
+              <svg
+                className="w-4 h-4 animate-spin"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              저장 중...
+            </>
           ) : (
             <>
               <svg
@@ -435,16 +453,16 @@ const CombinedResultPage = () => {
           onClick={handleRetry}
           className="flex-1 h-12 rounded-full border-2 border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 font-medium transition-colors hover:bg-zinc-900 hover:text-white dark:hover:bg-zinc-100 dark:hover:text-zinc-900"
         >
-          다시 분석하기
+          다시 뽑기
         </button>
       </div>
 
       <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center mt-4 pb-2">
-        본 결과는 재미로 보는 운세이며, 과학적 근거가 없습니다. 결과에 의미를
+        본 결과는 재미로 보는 타로이며, 과학적 근거가 없습니다. 결과에 의미를
         두지 마세요.
       </p>
     </div>
   );
 };
 
-export default CombinedResultPage;
+export default TarotResultPage;

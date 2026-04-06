@@ -98,8 +98,8 @@ const scoreLabel = (score: number) => {
   return "주의";
 };
 
-const PILLAR_NAMES = ["년주", "월주", "일주", "시주"];
-const PILLAR_KEYS = ["year", "month", "day", "hour"];
+const PILLAR_NAMES = ["시주", "일주", "월주", "년주"];
+const PILLAR_KEYS = ["hour", "day", "month", "year"];
 
 const SajuResultPage = () => {
   const [result, setResult] = useState<SajuResultData | null>(null);
@@ -422,12 +422,20 @@ const SajuResultPage = () => {
                 <p className="text-[10px] text-zinc-400">
                   {d.start_age}~{d.end_age}세
                 </p>
-                <p
-                  className="text-sm font-bold mt-1"
-                  style={{ color: ELEMENT_COLORS[d.gan_element] }}
-                >
-                  {d.ganzhi}
-                </p>
+                <div className="flex flex-col items-center mt-1">
+                  <span
+                    className="text-sm font-bold"
+                    style={{ color: ELEMENT_COLORS[d.gan_element] }}
+                  >
+                    {d.ganzhi[0]}
+                  </span>
+                  <span
+                    className="text-sm font-bold"
+                    style={{ color: ELEMENT_COLORS[d.zhi_element] }}
+                  >
+                    {d.ganzhi[1]}
+                  </span>
+                </div>
                 <p className="text-[10px] text-zinc-500 mt-1">{d.sipsin}</p>
               </div>
             ))}

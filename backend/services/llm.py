@@ -261,6 +261,117 @@ async def generate_saju_analysis(
 
 
 # ══════════════════════════════════════════════════
+# 타로 분석 프롬프트
+# ══════════════════════════════════════════════════
+
+TAROT_SYSTEM_PROMPT = """당신은 전문 타로 해석가입니다.
+사용자가 뽑은 타로 카드와 타로 관련 지식을 바탕으로 솔직한 타로 해석을 제공합니다.
+
+중요: 점수는 이미 계산되어 있으므로, 당신은 **해석과 설명만** 작성합니다.
+
+응답 규칙:
+1. 반드시 아래 JSON 형식으로만 응답하세요.
+2. 긍정적이고 건설적인 톤으로 해석하세요. "흉하다", "나쁘다", "불길하다" 같은 직접적 부정 표현은 절대 사용하지 마세요. 주의할 점은 "보완하면 좋다", "의식하면 개선된다" 등 건설적 표현으로 작성하세요.
+3. 과거/현재/미래 카드의 흐름과 연결성을 중요하게 해석하세요.
+4. 역방향 카드는 단순히 나쁜 의미가 아니라 '주의', '내면 성찰', '다른 관점'으로 해석하세요.
+5. 각 카드의 description은 2-3문장으로 카테고리에 맞게 작성하세요.
+6. overall은 3장의 흐름을 종합한 4-5문장의 해석을 작성하세요.
+7. card_interpretations의 score는 입력 그대로 복사하세요. 변경하지 마세요.
+
+JSON 형식:
+{
+  "summary": "한 줄 핵심 요약 (예: 새로운 사랑의 시작이 다가옵니다)",
+  "card_interpretations": [
+    {
+      "position": "과거/현재/미래",
+      "card_name": "카드 이름",
+      "description": "해당 카드 상세 해석 (당신이 작성)",
+      "score": 7.5
+    }
+  ],
+  "overall": "종합 타로 해석 (3장의 흐름을 연결하여 해석)",
+  "fortune_advice": ["조언1", "조언2", "조언3"],
+  "lucky": {
+    "color": "길한 색상",
+    "direction": "길한 방향",
+    "number": "행운의 숫자"
+  }
+}"""
+
+
+def _build_tarot_user_message(spread_data: dict, scores: dict, knowledge: list[dict]) -> str:
+    category = spread_data["category"]
+    cards = spread_data["cards"]
+
+    cards_text = "\n".join([
+        f"- {c['position']}: {c['card_name']}({c['card_name_en']}) "
+        f"{'역방향' if c['is_reversed'] else '정방향'} "
+        f"(점수: {next((cs['adjusted_score'] for cs in scores['card_scores'] if cs['position'] == c['position']), 5)}/10)"
+        f"\n  키워드: {c['reversed_keywords'] if c['is_reversed'] else c['upright_keywords']}"
+        f"\n  해석: {c['meaning']}"
+        for c in cards
+    ])
+
+    knowledge_text = "\n".join([
+        f"- [{k.get('category', '')}] {k.get('title', '')}: {k.get('content', '')[:200]}"
+        for k in knowledge[:10]
+    ])
+
+    return f"""## 타로 스프레드 (쓰리카드: 과거/현재/미래)
+카테고리: {category}
+종합 점수: {scores['overall_score']}/10
+
+{cards_text}
+
+## 관련 타로 지식
+{knowledge_text}
+
+위 타로 카드를 바탕으로 {category} 해석 결과를 JSON 형식으로 작성해주세요."""
+
+
+def generate_tarot_analysis_stream(
+    spread_data: dict,
+    scores: dict,
+    knowledge: list[dict],
+) -> Generator[str, None, None]:
+    """스트리밍 타로 분석 생성"""
+    response = _get_client().chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": TAROT_SYSTEM_PROMPT},
+            {"role": "user", "content": _build_tarot_user_message(spread_data, scores, knowledge)},
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.7,
+        stream=True,
+    )
+
+    for chunk in response:
+        delta = chunk.choices[0].delta.content
+        if delta:
+            yield delta
+
+
+async def generate_tarot_analysis(
+    spread_data: dict,
+    scores: dict,
+    knowledge: list[dict],
+) -> dict:
+    """일반 (비스트리밍) 타로 분석 생성"""
+    response = _get_client().chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": TAROT_SYSTEM_PROMPT},
+            {"role": "user", "content": _build_tarot_user_message(spread_data, scores, knowledge)},
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.7,
+    )
+
+    return json.loads(response.choices[0].message.content)
+
+
+# ══════════════════════════════════════════════════
 # 종합 분석 (관상 + 사주) 프롬프트
 # ══════════════════════════════════════════════════
 

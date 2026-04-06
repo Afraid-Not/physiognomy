@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Turnstile } from "@marsidev/react-turnstile";
 
 import { useAuth } from "../hooks/useAuth";
 
@@ -16,12 +15,12 @@ const CombinedPage = () => {
   const [day, setDay] = useState("");
   const [hour, setHour] = useState("");
   const [gender, setGender] = useState<"male" | "female" | "">("");
+  const [calendarType, setCalendarType] = useState<"solar" | "lunar">("solar");
+  const [isLeapMonth, setIsLeapMonth] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const turnstileRef = useRef<any>(null);
   const router = useRouter();
   const { getAccessToken } = useAuth();
 
@@ -67,8 +66,13 @@ const CombinedPage = () => {
       formData.append("birth_hour", hour);
       formData.append("birth_minute", "0");
       formData.append("gender", gender);
+      formData.append("is_lunar", calendarType === "lunar" ? "true" : "false");
+      formData.append(
+        "is_leap_month",
+        calendarType === "lunar" && isLeapMonth ? "true" : "false",
+      );
       formData.append("stream", "true");
-      formData.append("turnstile_token", turnstileToken ?? "");
+      formData.append("turnstile_token", "");
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
       const token = await getAccessToken();
@@ -137,8 +141,6 @@ const CombinedPage = () => {
     } finally {
       setIsLoading(false);
       setLoadingStep("");
-      setTurnstileToken(null);
-      turnstileRef.current?.reset();
     }
   }, [
     file,
@@ -147,10 +149,11 @@ const CombinedPage = () => {
     day,
     hour,
     gender,
+    calendarType,
+    isLeapMonth,
     preview,
     router,
     getAccessToken,
-    turnstileToken,
   ]);
 
   const handleDrop = useCallback(
@@ -226,10 +229,38 @@ const CombinedPage = () => {
 
         {/* 생년월일 */}
         <div className="w-full flex flex-col gap-4">
+          {/* 양력/음력 선택 */}
+          <div>
+            <label className="text-xs text-zinc-500 dark:text-zinc-400 mb-1 block">
+              달력 종류
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: "solar" as const, label: "양력" },
+                { value: "lunar" as const, label: "음력" },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    setCalendarType(opt.value);
+                    if (opt.value === "solar") setIsLeapMonth(false);
+                  }}
+                  className={`h-10 rounded-lg border-2 text-sm font-medium transition-all ${
+                    calendarType === opt.value
+                      ? "border-zinc-900 dark:border-zinc-100 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
+                      : "border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-600"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-xs text-zinc-500 dark:text-zinc-400 mb-1 block">
-                년 (양력)
+                년 ({calendarType === "solar" ? "양력" : "음력"})
               </label>
               <input
                 type="number"
@@ -270,6 +301,21 @@ const CombinedPage = () => {
               />
             </div>
           </div>
+
+          {/* 윤달 체크박스 (음력일 때만) */}
+          {calendarType === "lunar" && (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isLeapMonth}
+                onChange={(e) => setIsLeapMonth(e.target.checked)}
+                className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-zinc-400"
+              />
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                윤달
+              </span>
+            </label>
+          )}
 
           <div>
             <label className="text-xs text-zinc-500 dark:text-zinc-400 mb-1 block">
@@ -343,14 +389,6 @@ const CombinedPage = () => {
             <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
           </div>
         )}
-
-        <Turnstile
-          ref={turnstileRef}
-          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
-          onSuccess={setTurnstileToken}
-          onExpire={() => setTurnstileToken(null)}
-          options={{ theme: "light", size: "normal" }}
-        />
 
         <button
           onClick={handleSubmit}

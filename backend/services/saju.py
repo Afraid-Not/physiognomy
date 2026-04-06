@@ -5,7 +5,7 @@ lunar-python 기반 사주 원국 + 오행 + 십신 + 용신 + 대운 계산
 """
 
 from dataclasses import dataclass, field
-from lunar_python import Solar, EightChar
+from lunar_python import Solar, Lunar, EightChar
 
 
 # ══════════════════════════════════════════════════
@@ -366,15 +366,27 @@ def analyze_saju(
     hour: int, minute: int = 0,
     gender: str = "male",
     apply_timezone_correction: bool = True,
+    is_lunar: bool = False,
+    is_leap_month: bool = False,
 ) -> SajuResult:
     """
     생년월일시 → 사주팔자 분석 결과
 
     Parameters:
-        year, month, day, hour, minute: 양력 생년월일시
+        year, month, day, hour, minute: 생년월일시 (양력 또는 음력)
         gender: "male" or "female"
         apply_timezone_correction: 한국 표준시 보정 적용 여부
+        is_lunar: True이면 음력 입력
+        is_leap_month: 윤달 여부 (음력일 때만 유효)
     """
+    # 음력 입력 → 양력 변환 (이후 동일 파이프라인 사용)
+    if is_lunar:
+        lunar_month = -month if is_leap_month else month
+        lunar_input = Lunar.fromYmdHms(year, lunar_month, day, hour, minute, 0)
+        solar_input = lunar_input.getSolar()
+        year, month, day = solar_input.getYear(), solar_input.getMonth(), solar_input.getDay()
+        # hour/minute은 시계 시간이므로 유지
+
     # 표준시 보정
     if apply_timezone_correction:
         y, m, d, h, mi = _adjust_korea_time(year, month, day, hour, minute)
