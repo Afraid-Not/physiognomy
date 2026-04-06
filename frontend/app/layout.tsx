@@ -15,9 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "점zip | AI 관상 · 사주 분석",
-  description:
-    "AI 기반 관상 + 사주 분석 서비스 - 얼굴 사진과 생년월일로 운세를 봅니다",
+  title: "점zip | AI로 운세 체크",
+  description: "AI로 운세 체크 - 관상, 사주, 타로로 보는 나의 운명",
   icons: { icon: "/favicon.svg" },
 };
 

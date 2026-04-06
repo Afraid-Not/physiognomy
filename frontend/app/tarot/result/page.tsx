@@ -310,20 +310,20 @@ const TarotResultPage = () => {
                       key={idx}
                       className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 min-w-0 truncate">
                           {interp.position} - {interp.card_name}
                         </h3>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <span
-                            className="text-[10px] px-1.5 py-0.5 rounded-full text-white"
+                            className="text-[10px] px-1.5 py-0.5 rounded-full text-white whitespace-nowrap"
                             style={{
                               backgroundColor: scoreColorHex(interp.score),
                             }}
                           >
                             {scoreLabel(interp.score)}
                           </span>
-                          <span className="text-xs font-mono text-zinc-400">
+                          <span className="text-xs font-mono text-zinc-400 whitespace-nowrap">
                             {interp.score.toFixed(1)}
                           </span>
                         </div>
