@@ -5,20 +5,20 @@ kerykeion 라이브러리 (Swiss Ephemeris 기반)
 
 from kerykeion import AstrologicalSubject
 
-# 영문 → 한글 별자리명
+# 영문 → 한글 별자리명 (전체명 + kerykeion 약어 모두 지원)
 ZODIAC_SIGNS_KO: dict[str, str] = {
-    "Aries": "양자리",
-    "Taurus": "황소자리",
-    "Gemini": "쌍둥이자리",
-    "Cancer": "게자리",
-    "Leo": "사자자리",
-    "Virgo": "처녀자리",
-    "Libra": "천칭자리",
-    "Scorpio": "전갈자리",
-    "Sagittarius": "사수자리",
-    "Capricorn": "염소자리",
-    "Aquarius": "물병자리",
-    "Pisces": "물고기자리",
+    "Aries": "양자리",      "Ari": "양자리",
+    "Taurus": "황소자리",   "Tau": "황소자리",
+    "Gemini": "쌍둥이자리", "Gem": "쌍둥이자리",
+    "Cancer": "게자리",     "Can": "게자리",
+    "Leo": "사자자리",      "Leo": "사자자리",
+    "Virgo": "처녀자리",    "Vir": "처녀자리",
+    "Libra": "천칭자리",    "Lib": "천칭자리",
+    "Scorpio": "전갈자리",  "Sco": "전갈자리",
+    "Sagittarius": "사수자리", "Sag": "사수자리",
+    "Capricorn": "염소자리",   "Cap": "염소자리",
+    "Aquarius": "물병자리",    "Aqu": "물병자리",
+    "Pisces": "물고기자리",    "Pis": "물고기자리",
 }
 
 ZODIAC_ELEMENTS: dict[str, str] = {
