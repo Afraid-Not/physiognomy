@@ -59,7 +59,6 @@ Image upload (multipart/form-data, optional auth)
   -> services/hero_match.py  : match to Korean historical figure by trait similarity
   -> services/rag.py         : single OpenAI embedding -> Supabase hybrid_search RPC (15 results)
   -> services/llm.py         : GPT-4o-mini generates JSON interpretation (streaming or sync)
-  -> services/storage.py     : upload face image to Supabase Storage (face-images bucket)
   -> services/history.py     : save analysis result to analysis_history table (auth user only)
   -> services/usage_log.py   : log anonymous usage to anonymous_usage_logs (non-auth only)
   -> routers/analysis.py     : SSE stream (classified -> chunk -> done) or JSON response
