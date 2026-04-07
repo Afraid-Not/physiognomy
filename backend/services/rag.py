@@ -63,8 +63,9 @@ async def search_combined_knowledge(
     features: list[PhysiognomyFeature],
     saju_data: dict,
     spread_data: dict | None = None,
+    zodiac_data: dict | None = None,
 ) -> list[dict]:
-    """관상 + 사주 + 타로 종합 검색"""
+    """관상 + 사주 + 타로 + 별자리 종합 검색"""
     # 관상 쿼리
     face_parts = [f"{f.category} {f.label}" for f in features]
     # 사주 쿼리
@@ -80,8 +81,46 @@ async def search_combined_knowledge(
         for c in spread_data["cards"]:
             orientation = "정방향" if not c["is_reversed"] else "역방향"
             tarot_parts.append(f"{c['card_name']} {orientation} 타로")
-    query_text = " ".join(face_parts + saju_parts + tarot_parts + ["종합 운세 재물운 연애운 직업운"])
+    # 별자리 쿼리
+    zodiac_parts = []
+    if zodiac_data:
+        zodiac_parts = [
+            f"{zodiac_data.get('sun', {}).get('sign_ko', '')} 태양궁",
+            f"{zodiac_data.get('moon', {}).get('sign_ko', '')} 달궁",
+            f"{zodiac_data.get('ascendant', {}).get('sign_ko', '')} 상승궁",
+        ]
+    query_text = " ".join(face_parts + saju_parts + tarot_parts + zodiac_parts + ["종합 운세 재물운 연애운 직업운"])
     return await _hybrid_search(query_text, 20)
+
+
+async def search_zodiac_knowledge(zodiac_data: dict) -> list[dict]:
+    """별자리 분석 결과 기반 하이브리드 검색"""
+    sun = zodiac_data.get("sun", {})
+    moon = zodiac_data.get("moon", {})
+    asc = zodiac_data.get("ascendant", {})
+    parts = [
+        f"{sun.get('sign_ko', '')} 태양궁 성격 적성",
+        f"{moon.get('sign_ko', '')} 달궁 감정 내면",
+        f"{asc.get('sign_ko', '')} 상승궁 첫인상",
+        "별자리 서양 점성술",
+    ]
+    query_text = " ".join(parts)
+    return await _hybrid_search(query_text, 10)
+
+
+async def search_zodiac_knowledge(zodiac_data: dict) -> list[dict]:
+    """별자리 분석 결과 기반 하이브리드 검색"""
+    sun = zodiac_data.get("sun", {})
+    moon = zodiac_data.get("moon", {})
+    asc = zodiac_data.get("ascendant", {})
+    parts = [
+        f"{sun.get('sign_ko', '')} 태양궁 성격 적성",
+        f"{moon.get('sign_ko', '')} 달궁 감정 내면",
+        f"{asc.get('sign_ko', '')} 상승궁 첫인상",
+        "별자리 서양 점성술",
+    ]
+    query_text = " ".join(parts)
+    return await _hybrid_search(query_text, 10)
 
 
 async def search_tarot_knowledge(spread_data: dict) -> list[dict]:

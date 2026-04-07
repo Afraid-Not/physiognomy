@@ -372,28 +372,150 @@ async def generate_tarot_analysis(
 
 
 # ══════════════════════════════════════════════════
-# 종합 분석 (관상 + 사주) 프롬프트
+# 별자리 분석 프롬프트
 # ══════════════════════════════════════════════════
 
-COMBINED_SYSTEM_PROMPT = """당신은 관상학, 사주 명리학, 타로를 모두 마스터한 종합 운세 전문가입니다.
-사용자의 관상 분석 결과, 사주팔자 분석 결과, 타로 카드 결과를 종합하여 통합 운세 해석을 제공합니다.
+ZODIAC_SYSTEM_PROMPT = """당신은 서양 점성술 전문가입니다.
+사용자의 태양궁, 달궁, 상승궁 분석 결과와 점성술 지식을 바탕으로 성격과 적성을 해석해드립니다.
+
+중요: 점수는 이미 계산되어 있으므로, 당신은 **해석과 설명만** 작성합니다.
 
 응답 규칙:
 1. 반드시 아래 JSON 형식으로만 응답하세요.
-2. 관상, 사주, 타로가 일치하는 부분은 강조하고, 상충하는 부분은 균형 잡힌 해석을 제공하세요.
+2. 긍정적이고 건설적인 톤으로 해석하세요. 직접적 부정 표현은 절대 사용하지 마세요. 주의할 점은 개선 방향으로 표현하세요.
+3. 태양궁(핵심 자아), 달궁(감정 내면), 상승궁(사회적 이미지)의 고유한 의미를 살려 해석하세요.
+4. 세 궁이 서로 어떻게 상호작용하는지(조화/긴장)를 분석하세요.
+5. personality_description은 3-4문장, aptitude_description은 3-4문장으로 작성하세요.
+6. overall은 4-5문장의 종합 분석을 작성하세요.
+7. scores의 personality_scores와 aptitude_scores는 입력 그대로 복사하세요. 변경하지 마세요.
+
+JSON 형식:
+{
+  "summary": "한 줄 핵심 요약 (예: 사자자리의 카리스마와 전갈자리 달의 직관이 빛나는 별자리)",
+  "sun_description": "태양궁 해석 2-3문장 (핵심 자아, 의식적 정체성)",
+  "moon_description": "달궁 해석 2-3문장 (감정, 내면세계, 본능)",
+  "ascendant_description": "상승궁 해석 2-3문장 (첫인상, 사회적 이미지)",
+  "synergy": "세 궁의 상호작용 분석 2-3문장 (조화롭거나 긴장 관계)",
+  "personality_description": "성격 종합 해석 3-4문장",
+  "aptitude_description": "적성 종합 해석 3-4문장",
+  "overall": "종합 별자리 분석 4-5문장",
+  "fortune_advice": ["별자리에 기반한 조언1", "조언2", "조언3"],
+  "lucky": {
+    "color": "행운의 색상",
+    "direction": "행운의 방향",
+    "number": "행운의 숫자"
+  }
+}"""
+
+
+def _build_zodiac_user_message(zodiac_data: dict, scores: dict, knowledge: list[dict]) -> str:
+    sun = zodiac_data["sun"]
+    moon = zodiac_data["moon"]
+    asc = zodiac_data["ascendant"]
+
+    personality_text = "\n".join([
+        f"- {k}: {v}/10" for k, v in scores.get("personality_scores", {}).items()
+    ])
+    aptitude_text = "\n".join([
+        f"- {k}: {v}/10" for k, v in scores.get("aptitude_scores", {}).items()
+    ])
+    top_p = ", ".join([t["trait"] for t in scores.get("top_personality", [])])
+    top_a = ", ".join([t["trait"] for t in scores.get("top_aptitude", [])])
+
+    knowledge_text = "\n".join([
+        f"- [{k.get('category', '')}] {k.get('title', '')}: {k.get('content', '')[:200]}"
+        for k in knowledge[:8]
+    ])
+
+    return f"""## 태양궁 (Sun Sign) - 핵심 자아
+{sun['symbol']} {sun['sign_ko']} ({sun['sign_en']}) — {sun['element']}의 원소, {sun['modality']}, 지배행성: {sun['ruler']}
+날짜 범위: {sun['date_range']}
+
+## 달궁 (Moon Sign) - 내면 감정
+{moon['symbol']} {moon['sign_ko']} ({moon['sign_en']}) — {moon['element']}의 원소, {moon['modality']}, 지배행성: {moon['ruler']}
+
+## 상승궁 (Ascendant/Rising) - 사회적 이미지
+{asc['symbol']} {asc['sign_ko']} ({asc['sign_en']}) — {asc['element']}의 원소, {asc['modality']}, 지배행성: {asc['ruler']}
+
+## 규칙 기반 성격 점수 (변경 금지)
+{personality_text}
+상위 특성: {top_p}
+
+## 규칙 기반 적성 점수 (변경 금지)
+{aptitude_text}
+상위 적성: {top_a}
+
+## 관련 별자리 지식
+{knowledge_text}
+
+위 정보를 바탕으로 별자리 분석 결과를 JSON 형식으로 작성해주세요."""
+
+
+def generate_zodiac_analysis_stream(
+    zodiac_data: dict,
+    scores: dict,
+    knowledge: list[dict],
+) -> Generator[str, None, None]:
+    """스트리밍 별자리 분석 생성"""
+    response = _get_client().chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": ZODIAC_SYSTEM_PROMPT},
+            {"role": "user", "content": _build_zodiac_user_message(zodiac_data, scores, knowledge)},
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.7,
+        stream=True,
+    )
+
+    for chunk in response:
+        delta = chunk.choices[0].delta.content
+        if delta:
+            yield delta
+
+
+async def generate_zodiac_analysis(
+    zodiac_data: dict,
+    scores: dict,
+    knowledge: list[dict],
+) -> dict:
+    """일반 (비스트리밍) 별자리 분석 생성"""
+    response = _get_client().chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": ZODIAC_SYSTEM_PROMPT},
+            {"role": "user", "content": _build_zodiac_user_message(zodiac_data, scores, knowledge)},
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.7,
+    )
+
+    return json.loads(response.choices[0].message.content)
+
+
+# ══════════════════════════════════════════════════
+# 종합 분석 (관상 + 사주 + 타로 + 별자리) 프롬프트
+# ══════════════════════════════════════════════════
+
+COMBINED_SYSTEM_PROMPT = """당신은 관상학, 사주 명리학, 타로, 서양 점성술을 모두 마스터한 종합 운세 전문가입니다.
+사용자의 관상 분석 결과, 사주팔자 분석 결과, 타로 카드 결과, 별자리 분석 결과를 종합하여 통합 운세 해석을 제공합니다.
+
+응답 규칙:
+1. 반드시 아래 JSON 형식으로만 응답하세요.
+2. 관상(타고난 기질), 사주(운명의 흐름), 타로(현재 에너지), 별자리(우주적 성향) 네 가지가 일치하는 부분은 강조하고, 상충하는 부분은 균형 잡힌 해석을 제공하세요.
 3. 긍정적이고 건설적인 톤으로 해석하세요. "흉하다", "나쁘다", "불길하다", "박복하다" 같은 직접적 부정 표현은 절대 사용하지 마세요. 약한 부분은 개선 가능한 방향으로 조언하세요.
 4. overall은 7-8문장의 깊이 있는 종합 분석을 작성하세요.
-5. synergy에서 관상(타고난 기질) + 사주(운명의 흐름) + 타로(현재 에너지) 세 가지의 시너지를 분석하세요.
+5. synergy에서 관상+사주+타로+별자리 네 가지의 시너지를 분석하세요.
 
 JSON 형식:
 {
   "summary": "한 줄 핵심 요약",
-  "face_saju_synergy": "관상+사주+타로가 만나 나타나는 시너지/상충 분석 4-5문장",
+  "face_saju_synergy": "관상+사주+타로+별자리가 만나 나타나는 시너지/상충 분석 4-5문장",
   "wealth": {"score": 7.5, "description": "재물운 종합 해석 2-3문장"},
   "love": {"score": 7.5, "description": "연애/결혼운 종합 해석 2-3문장"},
   "career": {"score": 7.5, "description": "직업/사업운 종합 해석 2-3문장"},
   "health": {"score": 7.5, "description": "건강운 종합 해석 2-3문장"},
-  "overall": "종합 운세 분석 (관상+사주+타로 통합)",
+  "overall": "종합 운세 분석 (관상+사주+타로+별자리 통합)",
   "fortune_advice": ["실천 조언1", "실천 조언2", "실천 조언3"],
   "lucky": {
     "color": "길한 색상",
@@ -411,6 +533,8 @@ def _build_combined_user_message(
     spread_data: dict,
     tarot_scores: dict,
     knowledge: list[dict],
+    zodiac_data: dict | None = None,
+    zodiac_scores: dict | None = None,
 ) -> str:
     # 관상 요약
     face_text = "\n".join([
@@ -448,6 +572,24 @@ def _build_combined_user_message(
         for k in knowledge[:8]
     ])
 
+    # 별자리 요약
+    zodiac_text = ""
+    if zodiac_data and zodiac_scores:
+        sun = zodiac_data.get("sun", {})
+        moon = zodiac_data.get("moon", {})
+        asc = zodiac_data.get("ascendant", {})
+        top_p = ", ".join([t["trait"] for t in zodiac_scores.get("top_personality", [])])
+        top_a = ", ".join([t["trait"] for t in zodiac_scores.get("top_aptitude", [])])
+        zodiac_text = f"""
+## 별자리 분석 결과
+- 태양궁: {sun.get('symbol', '')} {sun.get('sign_ko', '')} ({sun.get('element', '')}의 원소)
+- 달궁: {moon.get('symbol', '')} {moon.get('sign_ko', '')} ({moon.get('element', '')}의 원소)
+- 상승궁: {asc.get('symbol', '')} {asc.get('sign_ko', '')} ({asc.get('element', '')}의 원소)
+- 상위 성격 특성: {top_p}
+- 상위 적성: {top_a}"""
+
+    zodiac_instruction = "관상 + 사주 + 타로 + 별자리" if zodiac_data else "관상 + 사주 + 타로"
+
     return f"""## 관상 분석 결과
 {face_text}
 관상 종합: {face_overall}
@@ -462,11 +604,12 @@ def _build_combined_user_message(
 ## 타로 분석 결과
 {tarot_text}
 {tarot_overall}
+{zodiac_text}
 
 ## 관련 지식
 {knowledge_text}
 
-위 관상 + 사주 + 타로 정보를 종합하여 통합 운세 분석 결과를 JSON 형식으로 작성해주세요."""
+위 {zodiac_instruction} 정보를 종합하여 통합 운세 분석 결과를 JSON 형식으로 작성해주세요."""
 
 
 def generate_combined_stream(
@@ -477,6 +620,8 @@ def generate_combined_stream(
     spread_data: dict,
     tarot_scores: dict,
     knowledge: list[dict],
+    zodiac_data: dict | None = None,
+    zodiac_scores: dict | None = None,
 ) -> Generator[str, None, None]:
     """스트리밍 종합 분석 생성"""
     response = _get_client().chat.completions.create(
@@ -485,7 +630,7 @@ def generate_combined_stream(
             {"role": "system", "content": COMBINED_SYSTEM_PROMPT},
             {"role": "user", "content": _build_combined_user_message(
                 face_features, face_result, saju_data, saju_scores,
-                spread_data, tarot_scores, knowledge,
+                spread_data, tarot_scores, knowledge, zodiac_data, zodiac_scores,
             )},
         ],
         response_format={"type": "json_object"},
@@ -507,6 +652,8 @@ async def generate_combined_analysis(
     spread_data: dict,
     tarot_scores: dict,
     knowledge: list[dict],
+    zodiac_data: dict | None = None,
+    zodiac_scores: dict | None = None,
 ) -> dict:
     """일반 (비스트리밍) 종합 분석 생성"""
     response = _get_client().chat.completions.create(
@@ -515,7 +662,7 @@ async def generate_combined_analysis(
             {"role": "system", "content": COMBINED_SYSTEM_PROMPT},
             {"role": "user", "content": _build_combined_user_message(
                 face_features, face_result, saju_data, saju_scores,
-                spread_data, tarot_scores, knowledge,
+                spread_data, tarot_scores, knowledge, zodiac_data, zodiac_scores,
             )},
         ],
         response_format={"type": "json_object"},

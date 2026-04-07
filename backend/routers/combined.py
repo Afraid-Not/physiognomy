@@ -15,6 +15,8 @@ from services.saju import analyze_saju
 from services.saju_scoring import compute_saju_scores
 from services.tarot import draw_three_card_spread
 from services.tarot_scoring import compute_tarot_scores
+from services.zodiac import calculate_zodiac
+from services.zodiac_scoring import compute_zodiac_scores
 from services.rag import search_combined_knowledge
 from services.llm import (
     generate_analysis,
@@ -42,6 +44,9 @@ async def analyze_combined(
     is_lunar: bool = Form(False),
     is_leap_month: bool = Form(False),
     tarot_category: str = Form("오늘의 운세"),
+    zodiac_latitude: float = Form(37.5665),
+    zodiac_longitude: float = Form(126.9780),
+    zodiac_timezone: str = Form("Asia/Seoul"),
     stream: bool = Form(False),
     user: dict | None = Depends(get_optional_user),
 ):
@@ -92,6 +97,19 @@ async def analyze_combined(
     spread_data = spread.to_dict()
     tarot_scores = compute_tarot_scores(spread)
 
+    # ── Step 3.5: 별자리 분석 ──
+    zodiac_data = calculate_zodiac(
+        birth_year=birth_year, birth_month=birth_month, birth_day=birth_day,
+        birth_hour=birth_hour, birth_minute=birth_minute,
+        latitude=zodiac_latitude, longitude=zodiac_longitude,
+        timezone=zodiac_timezone,
+    )
+    zodiac_scores = compute_zodiac_scores(
+        sun_sign=zodiac_data["sun"]["sign_ko"],
+        moon_sign=zodiac_data["moon"]["sign_ko"],
+        ascendant_sign=zodiac_data["ascendant"]["sign_ko"],
+    )
+
     # ── Step 4: 관상 LLM 해석 (종합에 필요) ──
     from services.rag import search_knowledge
     face_knowledge = await search_knowledge(face_features)
@@ -104,10 +122,10 @@ async def analyze_combined(
                 f["category"] = f"{face_features[i].category} - {face_features[i].label}"
 
     # ── Step 5: 종합 RAG 검색 ──
-    combined_knowledge = await search_combined_knowledge(face_features, saju_data, spread_data)
+    combined_knowledge = await search_combined_knowledge(face_features, saju_data, spread_data, zodiac_data)
 
-    # ── Step 6: 위인 매칭 (관상 + 사주 + 타로) ──
-    hero = match_hero_combined(face_features, saju_data, saju_scores, spread_data, tarot_scores)
+    # ── Step 6: 위인 매칭 (관상 + 사주 + 타로 + 별자리) ──
+    hero = match_hero_combined(face_features, saju_data, saju_scores, spread_data, tarot_scores, zodiac_data, zodiac_scores)
 
     # ── Step 7: 종합 LLM 분석 ──
     if stream:
@@ -134,6 +152,10 @@ async def analyze_combined(
                         "spread": spread_data,
                         "scores": tarot_scores,
                     },
+                    "zodiac": {
+                        "data": zodiac_data,
+                        "scores": zodiac_scores,
+                    },
                 },
                 "hero": hero,
             }
@@ -144,6 +166,7 @@ async def analyze_combined(
             for chunk in generate_combined_stream(
                 face_features, face_result, saju_data, saju_scores,
                 spread_data, tarot_scores, combined_knowledge,
+                zodiac_data, zodiac_scores,
             ):
                 full_text += chunk
                 yield f"data: {json.dumps({'type': 'chunk', 'data': chunk}, ensure_ascii=False)}\n\n"
@@ -167,6 +190,7 @@ async def analyze_combined(
                         result_data={
                             "face": face_result, "saju": saju_data, "saju_scores": saju_scores,
                             "tarot": {"spread": spread_data, "scores": tarot_scores},
+                            "zodiac": {"data": zodiac_data, "scores": zodiac_scores},
                             "combined": parsed, "hero": hero,
                         },
                     )
@@ -179,6 +203,7 @@ async def analyze_combined(
     combined_result = await generate_combined_analysis(
         face_features, face_result, saju_data, saju_scores,
         spread_data, tarot_scores, combined_knowledge,
+        zodiac_data, zodiac_scores,
     )
 
     # 이력 저장 (로그인 사용자만)
@@ -194,6 +219,7 @@ async def analyze_combined(
             result_data={
                 "face": face_result, "saju": saju_data, "saju_scores": saju_scores,
                 "tarot": {"spread": spread_data, "scores": tarot_scores},
+                "zodiac": {"data": zodiac_data, "scores": zodiac_scores},
                 "combined": combined_result, "hero": hero,
             },
         )
@@ -203,6 +229,7 @@ async def analyze_combined(
         "saju": saju_data,
         "saju_scores": saju_scores,
         "tarot": {"spread": spread_data, "scores": tarot_scores},
+        "zodiac": {"data": zodiac_data, "scores": zodiac_scores},
         "combined": combined_result,
         "hero": hero,
     }

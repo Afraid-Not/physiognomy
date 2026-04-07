@@ -65,6 +65,18 @@ interface CombinedResultData {
         fortune_scores: { luck: number; timing: number; energy: number };
       };
     };
+    zodiac?: {
+      data: {
+        sun: { sign_ko: string; symbol: string; element: string };
+        moon: { sign_ko: string; symbol: string; element: string };
+        ascendant: { sign_ko: string; symbol: string; element: string };
+      };
+      scores: {
+        overall_score: number;
+        top_personality: { trait: string; score: number }[];
+        top_aptitude: { trait: string; score: number }[];
+      };
+    };
   };
   analysis: {
     summary: string;
@@ -195,6 +207,7 @@ const CombinedResultPage = () => {
   const saju = classified.saju;
   const face = classified.face;
   const tarot = classified.tarot;
+  const zodiac = classified.zodiac;
   const fortuneItems = [
     { ...analysis.wealth, label: "재물운" },
     { ...analysis.love, label: "연애운" },
@@ -284,7 +297,7 @@ const CombinedResultPage = () => {
             </div>
             <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
               <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-2">
-                관상 + 사주 + 타로 시너지
+                관상 + 사주 + 타로 + 별자리 시너지
               </h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 {analysis.face_saju_synergy}
@@ -395,6 +408,56 @@ const CombinedResultPage = () => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* 별자리 요약 */}
+        {zodiac && (
+          <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
+            <h2 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-3">
+              별자리 ({zodiac.scores.overall_score.toFixed(1)}/10)
+            </h2>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "태양궁", emoji: "☀️", info: zodiac.data.sun },
+                { label: "달궁", emoji: "🌙", info: zodiac.data.moon },
+                { label: "상승궁", emoji: "⬆️", info: zodiac.data.ascendant },
+              ].map(({ label, emoji, info }) => (
+                <div
+                  key={label}
+                  className="text-center p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900"
+                >
+                  <p className="text-[10px] text-zinc-400 mb-1">{label}</p>
+                  <p className="text-lg">{emoji}</p>
+                  <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">
+                    {info.symbol} {info.sign_ko}
+                  </p>
+                  <p className="text-[10px] text-zinc-500 mt-0.5">
+                    {info.element}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+              {zodiac.scores.top_personality.length > 0 && (
+                <div>
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    성격:{" "}
+                  </span>
+                  {zodiac.scores.top_personality
+                    .map((t) => t.trait)
+                    .join(" · ")}
+                </div>
+              )}
+              {zodiac.scores.top_aptitude.length > 0 && (
+                <div>
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    적성:{" "}
+                  </span>
+                  {zodiac.scores.top_aptitude.map((t) => t.trait).join(" · ")}
+                </div>
+              )}
             </div>
           </div>
         )}

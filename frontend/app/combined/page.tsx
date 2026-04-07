@@ -7,6 +7,136 @@ import { useAuth } from "../hooks/useAuth";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
+const CITIES = [
+  { group: "한국", name: "서울", lat: 37.5665, lng: 126.978, tz: "Asia/Seoul" },
+  {
+    group: "한국",
+    name: "부산",
+    lat: 35.1796,
+    lng: 129.0756,
+    tz: "Asia/Seoul",
+  },
+  {
+    group: "한국",
+    name: "대구",
+    lat: 35.8714,
+    lng: 128.6014,
+    tz: "Asia/Seoul",
+  },
+  {
+    group: "한국",
+    name: "인천",
+    lat: 37.4563,
+    lng: 126.7052,
+    tz: "Asia/Seoul",
+  },
+  {
+    group: "한국",
+    name: "광주",
+    lat: 35.1595,
+    lng: 126.8526,
+    tz: "Asia/Seoul",
+  },
+  {
+    group: "한국",
+    name: "대전",
+    lat: 36.3504,
+    lng: 127.3845,
+    tz: "Asia/Seoul",
+  },
+  {
+    group: "한국",
+    name: "제주",
+    lat: 33.4996,
+    lng: 126.5312,
+    tz: "Asia/Seoul",
+  },
+  {
+    group: "아시아",
+    name: "도쿄 (일본)",
+    lat: 35.6762,
+    lng: 139.6503,
+    tz: "Asia/Tokyo",
+  },
+  {
+    group: "아시아",
+    name: "베이징 (중국)",
+    lat: 39.9042,
+    lng: 116.4074,
+    tz: "Asia/Shanghai",
+  },
+  {
+    group: "아시아",
+    name: "홍콩",
+    lat: 22.3193,
+    lng: 114.1694,
+    tz: "Asia/Hong_Kong",
+  },
+  {
+    group: "아시아",
+    name: "싱가포르",
+    lat: 1.3521,
+    lng: 103.8198,
+    tz: "Asia/Singapore",
+  },
+  {
+    group: "아시아",
+    name: "방콕 (태국)",
+    lat: 13.7563,
+    lng: 100.5018,
+    tz: "Asia/Bangkok",
+  },
+  {
+    group: "아시아",
+    name: "두바이 (UAE)",
+    lat: 25.2048,
+    lng: 55.2708,
+    tz: "Asia/Dubai",
+  },
+  {
+    group: "유럽",
+    name: "런던 (영국)",
+    lat: 51.5074,
+    lng: -0.1278,
+    tz: "Europe/London",
+  },
+  {
+    group: "유럽",
+    name: "파리 (프랑스)",
+    lat: 48.8566,
+    lng: 2.3522,
+    tz: "Europe/Paris",
+  },
+  {
+    group: "유럽",
+    name: "베를린 (독일)",
+    lat: 52.52,
+    lng: 13.405,
+    tz: "Europe/Berlin",
+  },
+  {
+    group: "아메리카",
+    name: "뉴욕 (미국)",
+    lat: 40.7128,
+    lng: -74.006,
+    tz: "America/New_York",
+  },
+  {
+    group: "아메리카",
+    name: "LA (미국)",
+    lat: 34.0522,
+    lng: -118.2437,
+    tz: "America/Los_Angeles",
+  },
+  {
+    group: "오세아니아",
+    name: "시드니 (호주)",
+    lat: -33.8688,
+    lng: 151.2093,
+    tz: "Australia/Sydney",
+  },
+];
+
 const TAROT_CATEGORIES = [
   {
     value: "오늘의 운세",
@@ -30,6 +160,7 @@ const CombinedPage = () => {
   const [calendarType, setCalendarType] = useState<"solar" | "lunar">("solar");
   const [isLeapMonth, setIsLeapMonth] = useState(false);
   const [tarotCategory, setTarotCategory] = useState("오늘의 운세");
+  const [cityKey, setCityKey] = useState("서울");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +216,10 @@ const CombinedPage = () => {
         calendarType === "lunar" && isLeapMonth ? "true" : "false",
       );
       formData.append("tarot_category", tarotCategory);
+      const selectedCity = CITIES.find((c) => c.name === cityKey) ?? CITIES[0];
+      formData.append("zodiac_latitude", String(selectedCity.lat));
+      formData.append("zodiac_longitude", String(selectedCity.lng));
+      formData.append("zodiac_timezone", selectedCity.tz);
       formData.append("stream", "true");
       formData.append("turnstile_token", "");
 
@@ -166,6 +301,7 @@ const CombinedPage = () => {
     calendarType,
     isLeapMonth,
     tarotCategory,
+    cityKey,
     preview,
     router,
     getAccessToken,
@@ -419,6 +555,39 @@ const CombinedPage = () => {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* 출생지 (상승궁 계산용) */}
+        <div className="w-full flex flex-col gap-2">
+          <label className="text-xs text-zinc-500 dark:text-zinc-400 block">
+            출생지{" "}
+            <span className="text-zinc-400 dark:text-zinc-500">
+              (별자리 상승궁 계산용)
+            </span>
+          </label>
+          <select
+            value={cityKey}
+            onChange={(e) => setCityKey(e.target.value)}
+            className={inputClass}
+          >
+            {Object.entries(
+              CITIES.reduce(
+                (acc, c) => {
+                  (acc[c.group] ??= []).push(c);
+                  return acc;
+                },
+                {} as Record<string, typeof CITIES>,
+              ),
+            ).map(([group, cities]) => (
+              <optgroup key={group} label={group}>
+                {cities.map((c) => (
+                  <option key={c.name} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
         </div>
 
         {error && (

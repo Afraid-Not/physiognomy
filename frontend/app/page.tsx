@@ -64,8 +64,28 @@ const menuItems = [
     ),
   },
   {
+    title: "별자리 분석",
+    description: "태양궁·달궁·상승궁으로 성격과 적성을 분석합니다",
+    href: "/zodiac",
+    icon: (
+      <svg
+        className="w-8 h-8"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+        />
+      </svg>
+    ),
+  },
+  {
     title: "종합 분석",
-    description: "관상 + 사주를 합쳐 종합 운세를 봅니다",
+    description: "관상 + 사주 + 타로 + 별자리 종합 운세",
     href: "/combined",
     icon: (
       <svg
@@ -149,16 +169,14 @@ const HomePage = () => {
             추후 추가 예정
           </p>
           <div className="flex flex-wrap gap-2">
-            {["별자리 분석", "혈액형 분석", "MBTI 포함 종합분석"].map(
-              (label) => (
-                <span
-                  key={label}
-                  className="px-3 py-1 text-xs rounded-full bg-zinc-200/70 dark:bg-zinc-700/50 text-zinc-500 dark:text-zinc-400"
-                >
-                  {label}
-                </span>
-              ),
-            )}
+            {["혈액형 분석", "MBTI 포함 종합분석"].map((label) => (
+              <span
+                key={label}
+                className="px-3 py-1 text-xs rounded-full bg-zinc-200/70 dark:bg-zinc-700/50 text-zinc-500 dark:text-zinc-400"
+              >
+                {label}
+              </span>
+            ))}
           </div>
         </div>
 

@@ -241,37 +241,101 @@ def match_hero_saju(saju_data: dict, scores: dict) -> dict:
     return _find_best_match(traits)
 
 
+def match_hero_zodiac(zodiac_data: dict, scores: dict) -> dict:
+    """별자리 분석 결과 → 위인 매칭"""
+    traits = _extract_traits_from_zodiac(zodiac_data, scores)
+    return _find_best_match(traits)
+
+
 def match_hero_combined(
     features: list,
     saju_data: dict,
     scores: dict,
     spread_data: dict | None = None,
     tarot_scores: dict | None = None,
+    zodiac_data: dict | None = None,
+    zodiac_scores: dict | None = None,
 ) -> dict:
-    """종합 분석 → 위인 매칭 (관상 + 사주 + 타로 특성 합산)"""
+    """종합 분석 → 위인 매칭 (관상 + 사주 + 타로 + 별자리 특성 합산)"""
     face_traits = _extract_traits_from_face(features)
     saju_traits = _extract_traits_from_saju(saju_data, scores)
 
-    if spread_data and tarot_scores:
+    has_tarot = spread_data and tarot_scores
+    has_zodiac = zodiac_data and zodiac_scores
+
+    if has_tarot and has_zodiac:
+        # 관상 0.25 + 사주 0.25 + 타로 0.25 + 별자리 0.25
         tarot_traits = _extract_traits_from_tarot(spread_data, tarot_scores)
-        # 관상 0.3 + 사주 0.4 + 타로 0.3
-        all_keys = set(face_traits.keys()) | set(saju_traits.keys()) | set(tarot_traits.keys())
+        zodiac_traits = _extract_traits_from_zodiac(zodiac_data, zodiac_scores)
+        all_keys = set(face_traits) | set(saju_traits) | set(tarot_traits) | set(zodiac_traits)
         combined_traits = {}
         for key in all_keys:
-            f_val = face_traits.get(key, 0.0)
-            s_val = saju_traits.get(key, 0.0)
-            t_val = tarot_traits.get(key, 0.0)
-            combined_traits[key] = f_val * 0.3 + s_val * 0.4 + t_val * 0.3
+            combined_traits[key] = (
+                face_traits.get(key, 0.0) * 0.25
+                + saju_traits.get(key, 0.0) * 0.25
+                + tarot_traits.get(key, 0.0) * 0.25
+                + zodiac_traits.get(key, 0.0) * 0.25
+            )
+    elif has_tarot:
+        tarot_traits = _extract_traits_from_tarot(spread_data, tarot_scores)
+        all_keys = set(face_traits) | set(saju_traits) | set(tarot_traits)
+        combined_traits = {}
+        for key in all_keys:
+            combined_traits[key] = (
+                face_traits.get(key, 0.0) * 0.3
+                + saju_traits.get(key, 0.0) * 0.4
+                + tarot_traits.get(key, 0.0) * 0.3
+            )
     else:
-        # 타로 없이 기존 방식 (하위 호환)
-        all_keys = set(face_traits.keys()) | set(saju_traits.keys())
+        all_keys = set(face_traits) | set(saju_traits)
         combined_traits = {}
         for key in all_keys:
-            f_val = face_traits.get(key, 0.0)
-            s_val = saju_traits.get(key, 0.0)
-            combined_traits[key] = f_val * 0.4 + s_val * 0.6
+            combined_traits[key] = face_traits.get(key, 0.0) * 0.4 + saju_traits.get(key, 0.0) * 0.6
 
     return _find_best_match(combined_traits)
+
+
+def _extract_traits_from_zodiac(zodiac_data: dict, scores: dict) -> dict[str, float]:
+    """별자리 분석 결과 → 특성 점수"""
+    # 태양궁 → hero trait 매핑
+    ZODIAC_TRAIT_MAP: dict[str, dict[str, float]] = {
+        "양자리":     {"leadership": 0.9, "authority": 0.7, "career": 0.7, "creativity": 0.5},
+        "황소자리":   {"wealth": 0.8, "business": 0.8, "balance": 0.7, "creativity": 0.6},
+        "쌍둥이자리": {"creativity": 0.8, "charm": 0.8, "wisdom": 0.7, "career": 0.6},
+        "게자리":     {"love": 0.9, "support": 0.8, "balance": 0.7, "wisdom": 0.6},
+        "사자자리":   {"leadership": 0.9, "charm": 0.8, "creativity": 0.8, "authority": 0.7},
+        "처녀자리":   {"wisdom": 0.9, "technical": 0.8, "career": 0.8, "balance": 0.7},
+        "천칭자리":   {"balance": 0.9, "charm": 0.8, "love": 0.7, "creativity": 0.7},
+        "전갈자리":   {"wisdom": 0.9, "authority": 0.7, "career": 0.7, "wealth": 0.6},
+        "사수자리":   {"creativity": 0.8, "career": 0.7, "wisdom": 0.7, "leadership": 0.6},
+        "염소자리":   {"authority": 0.9, "career": 0.9, "wealth": 0.8, "leadership": 0.7},
+        "물병자리":   {"creativity": 0.9, "technical": 0.8, "leadership": 0.7, "wisdom": 0.7},
+        "물고기자리": {"love": 0.9, "support": 0.9, "creativity": 0.8, "wisdom": 0.7},
+    }
+
+    traits: dict[str, float] = {}
+    sun_sign = zodiac_data.get("sun", {}).get("sign_ko", "")
+    moon_sign = zodiac_data.get("moon", {}).get("sign_ko", "")
+    asc_sign = zodiac_data.get("ascendant", {}).get("sign_ko", "")
+
+    sun_traits = ZODIAC_TRAIT_MAP.get(sun_sign, {})
+    moon_traits = ZODIAC_TRAIT_MAP.get(moon_sign, {})
+    asc_traits = ZODIAC_TRAIT_MAP.get(asc_sign, {})
+
+    # 태양궁 50% + 달궁 30% + 상승궁 20%
+    all_keys = set(sun_traits) | set(moon_traits) | set(asc_traits)
+    for key in all_keys:
+        s = sun_traits.get(key, 0.0)
+        m = moon_traits.get(key, 0.0)
+        a = asc_traits.get(key, 0.0)
+        traits[key] = s * 0.5 + m * 0.3 + a * 0.2
+
+    # overall_score 기반 기본값
+    overall_norm = scores.get("overall_score", 5.0) / 10.0
+    traits.setdefault("career", overall_norm)
+    traits.setdefault("wisdom", overall_norm)
+
+    return traits
 
 
 def _extract_traits_from_tarot(spread_data: dict, scores: dict) -> dict[str, float]:
