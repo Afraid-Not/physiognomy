@@ -18,7 +18,7 @@ load_dotenv(Path(r"D:\dev\physiognomy\.env"))
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 supabase = create_client(
     os.getenv("SUPABASE_URL"),
-    os.getenv("SUPABASE_SERVICE_KEY", os.getenv("SUPABASE_KEY")),
+    os.getenv("SUPABASE_SERVICE_ROLE_KEY", os.getenv("SUPABASE_KEY")),
 )
 
 DATA_PATH = Path(r"D:\dev\physiognomy\ml\data\zodiac_knowledge.json")
@@ -26,6 +26,13 @@ DATA_PATH = Path(r"D:\dev\physiognomy\ml\data\zodiac_knowledge.json")
 with open(DATA_PATH, "r", encoding="utf-8") as f:
     entries = json.load(f)
 print(f"별자리 지식 {len(entries)}개 로드")
+
+# 기존 zodiac 데이터 삭제
+try:
+    supabase.table("physiognomy_knowledge").delete().eq("source_type", "zodiac").execute()
+    print("기존 zodiac 데이터 삭제 완료")
+except Exception as ex:
+    print(f"기존 데이터 삭제 실패: {ex}")
 
 texts = [f"{e['category']} - {e['title']}: {e['content']}" for e in entries]
 embeddings = []
