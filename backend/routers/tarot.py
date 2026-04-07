@@ -5,7 +5,7 @@ POST /api/tarot
 
 import json
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -15,8 +15,8 @@ from services.rag import search_tarot_knowledge
 from services.llm import generate_tarot_analysis, generate_tarot_analysis_stream
 from services.history import save_history
 from services.hero_match import match_hero_tarot
+from services.usage_log import log_anonymous_usage
 from middleware.auth import get_optional_user
-from middleware.turnstile import require_turnstile
 
 router = APIRouter()
 
@@ -24,17 +24,16 @@ router = APIRouter()
 class TarotRequest(BaseModel):
     category: str = Field(..., pattern=r"^(연애|재물|직업|건강|오늘의 운세)$")
     stream: bool = False
-    turnstile_token: str = ""
 
 
 @router.post("/tarot")
-async def analyze_tarot(req: TarotRequest, user: dict | None = Depends(get_optional_user)):
+async def analyze_tarot(req: TarotRequest, request: Request, user: dict | None = Depends(get_optional_user)):
     """
     카테고리 선택 → 카드 3장 뽑기 → 점수 산정 → RAG → LLM 분석
     stream=true 이면 SSE 스트리밍 응답
     """
-    # Turnstile 캡챠 검증
-    await require_turnstile(req.turnstile_token)
+    if not user:
+        await log_anonymous_usage(request, "tarot", category=req.category)
 
     # Step 1: 카드 뽑기
     spread = draw_three_card_spread(req.category)

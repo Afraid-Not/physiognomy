@@ -1,6 +1,6 @@
 import json
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -9,10 +9,9 @@ from services.classifier import classify_features
 from services.rag import search_knowledge
 from services.llm import generate_analysis, generate_analysis_stream
 from services.history import save_history
-
 from services.hero_match import match_hero_face
+from services.usage_log import log_anonymous_usage
 from middleware.auth import get_optional_user
-from middleware.turnstile import require_turnstile
 
 router = APIRouter()
 
@@ -31,20 +30,20 @@ class AnalysisResponse(BaseModel):
 
 @router.post("/analyze")
 async def analyze_face(
+    request: Request,
     file: UploadFile = File(...),
     stream: bool = False,
-    turnstile_token: str = Form(""),
     user: dict | None = Depends(get_optional_user),
 ):
     """
     사진 → 랜드마크 → 비율 → 모델 추론 → RAG → LLM 분석
     stream=true 이면 SSE 스트리밍 응답
     """
-    # Turnstile 캡챠 검증
-    await require_turnstile(turnstile_token)
-
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="이미지 파일만 업로드 가능합니다.")
+
+    if not user:
+        await log_anonymous_usage(request, "face")
 
     image_bytes = await file.read()
 

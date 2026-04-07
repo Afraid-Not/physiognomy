@@ -6,7 +6,7 @@ POST /api/combined
 import json
 from datetime import date
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 
 from services.landmark import extract_landmarks
@@ -22,16 +22,16 @@ from services.llm import (
     generate_combined_analysis,
 )
 from services.history import save_history
-
 from services.hero_match import match_hero_combined
+from services.usage_log import log_anonymous_usage
 from middleware.auth import get_optional_user
-from middleware.turnstile import require_turnstile
 
 router = APIRouter()
 
 
 @router.post("/combined")
 async def analyze_combined(
+    request: Request,
     file: UploadFile = File(...),
     birth_year: int = Form(...),
     birth_month: int = Form(...),
@@ -43,15 +43,11 @@ async def analyze_combined(
     is_leap_month: bool = Form(False),
     tarot_category: str = Form("오늘의 운세"),
     stream: bool = Form(False),
-    turnstile_token: str = Form(""),
     user: dict | None = Depends(get_optional_user),
 ):
     """
     사진 + 생년월일 + 타로 → 관상 + 사주 + 타로 → 종합 LLM 해석
     """
-    # Turnstile 캡챠 검증
-    await require_turnstile(turnstile_token)
-
     # 입력 검증
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="이미지 파일만 업로드 가능합니다.")
@@ -64,6 +60,9 @@ async def analyze_combined(
         raise HTTPException(status_code=400, detail="성별은 male 또는 female이어야 합니다.")
     if tarot_category not in ("연애", "재물", "직업", "건강", "오늘의 운세"):
         raise HTTPException(status_code=400, detail="유효하지 않은 타로 카테고리입니다.")
+
+    if not user:
+        await log_anonymous_usage(request, "combined", category=tarot_category)
 
     image_bytes = await file.read()
 

@@ -6,7 +6,7 @@ POST /api/saju
 import json
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -16,8 +16,8 @@ from services.rag import search_saju_knowledge
 from services.llm import generate_saju_analysis, generate_saju_analysis_stream
 from services.history import save_history
 from services.hero_match import match_hero_saju
+from services.usage_log import log_anonymous_usage
 from middleware.auth import get_optional_user
-from middleware.turnstile import require_turnstile
 
 router = APIRouter()
 
@@ -32,17 +32,16 @@ class SajuRequest(BaseModel):
     is_lunar: bool = False
     is_leap_month: bool = False
     stream: bool = False
-    turnstile_token: str = ""
 
 
 @router.post("/saju")
-async def analyze_saju_endpoint(req: SajuRequest, user: dict | None = Depends(get_optional_user)):
+async def analyze_saju_endpoint(req: SajuRequest, request: Request, user: dict | None = Depends(get_optional_user)):
     """
     생년월일시 → 사주 원국 → 점수 산정 → RAG → LLM 분석
     stream=true 이면 SSE 스트리밍 응답
     """
-    # Turnstile 캡챠 검증
-    await require_turnstile(req.turnstile_token)
+    if not user:
+        await log_anonymous_usage(request, "saju")
 
     # 날짜 유효성 검증 (양력일 때만 date() 검증)
     if not req.is_lunar:
