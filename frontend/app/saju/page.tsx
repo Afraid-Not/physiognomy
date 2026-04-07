@@ -27,7 +27,7 @@ const SajuPage = () => {
     supabase
       .from("profiles")
       .select("birth_year, birth_month, birth_day, birth_hour, gender")
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
         if (!data) return;
         if (data.birth_year) setYear(String(data.birth_year));

@@ -43,7 +43,7 @@ python ml/scripts/embed_and_store.py  # embed RAG knowledge -> Supabase pgvector
 ### Tarot Embedding (타로 지식 임베딩)
 
 ```bash
-# service_role key 필요 (SUPABASE_SERVICE_KEY 환경변수)
+# service_role key 필요 (SUPABASE_SERVICE_ROLE_KEY 환경변수)
 python ml/scripts/embed_tarot_only.py   # tarot knowledge -> Supabase pgvector
 ```
 
@@ -52,7 +52,7 @@ python ml/scripts/embed_tarot_only.py   # tarot knowledge -> Supabase pgvector
 ### Request Flow - 관상 (POST /api/analyze)
 
 ```
-Image upload (multipart/form-data, requires auth)
+Image upload (multipart/form-data, optional auth)
   -> services/landmark.py    : MediaPipe FaceLandmarker -> 37 facial ratios (tries 4 rotations)
   -> services/classifier.py  : 9 XGBoost models predict physiognomy type per region
   -> services/scoring.py     : rule-based score (1-10) from BASE_SCORES dict + confidence adjustment
@@ -60,19 +60,21 @@ Image upload (multipart/form-data, requires auth)
   -> services/rag.py         : single OpenAI embedding -> Supabase hybrid_search RPC (15 results)
   -> services/llm.py         : GPT-4o-mini generates JSON interpretation (streaming or sync)
   -> services/storage.py     : upload face image to Supabase Storage (face-images bucket)
-  -> services/history.py     : save analysis result to analysis_history table
+  -> services/history.py     : save analysis result to analysis_history table (auth user only)
+  -> services/usage_log.py   : log anonymous usage to anonymous_usage_logs (non-auth only)
   -> routers/analysis.py     : SSE stream (classified -> chunk -> done) or JSON response
 ```
 
 ### Request Flow - 사주 (POST /api/saju)
 
 ```
-Birth datetime + gender (JSON body, requires auth)
+Birth datetime + gender (JSON body, optional auth)
   -> services/saju.py        : lunar-python -> 사주 원국 (4주), 오행, 십신, 용신, 대운 + 한국 표준시 보정
   -> services/saju_scoring.py: rule-based scores (오행균형, 용신강약, 재물운, 연애운, 직업운)
   -> services/hero_match.py  : saju-based hero matching (오행/십신 -> traits)
   -> services/rag.py         : saju knowledge hybrid search
   -> services/llm.py         : GPT-4o-mini saju interpretation (streaming or sync)
+  -> services/usage_log.py   : log anonymous usage (non-auth only)
   -> routers/saju.py         : SSE stream same pattern
 ```
 
@@ -85,6 +87,7 @@ Category selection + random draw (JSON body, optional auth)
   -> services/hero_match.py    : tarot-based hero matching (card traits -> 위인 매칭)
   -> services/rag.py           : tarot knowledge hybrid search
   -> services/llm.py           : GPT-4o-mini tarot interpretation (streaming or sync)
+  -> services/usage_log.py     : log anonymous usage (non-auth only)
   -> routers/tarot.py          : SSE stream same pattern (classified -> chunk -> done)
 ```
 
@@ -93,13 +96,14 @@ Category selection + random draw (JSON body, optional auth)
 ### Request Flow - 종합 (POST /api/combined)
 
 ```
-Image + birth datetime + gender + tarot_category (multipart, requires auth)
+Image + birth datetime + gender + tarot_category (multipart, optional auth)
   -> 관상 pipeline (landmark -> classifier -> scoring)
   -> 사주 pipeline (saju -> saju_scoring)
   -> 타로 pipeline (draw_three_card_spread -> tarot_scoring)
   -> services/hero_match.py  : combined matching (face 30% + saju 40% + tarot 30% weighted traits)
   -> services/rag.py         : combined knowledge search (face + saju + tarot keywords)
   -> services/llm.py         : GPT-4o-mini combined interpretation (관상+사주+타로 통합)
+  -> services/usage_log.py   : log anonymous usage (non-auth only)
   -> routers/combined.py     : SSE stream with face + saju + tarot + combined results
 ```
 
@@ -109,7 +113,8 @@ All routers post-process LLM output to force rule-based scores over any LLM-gene
 
 ```
 middleware/auth.py : Supabase JWT verification via ES256 (JWKS public key from /auth/v1/.well-known/jwks.json)
-                     All analysis/profile/history routes use Depends(get_current_user)
+                     get_current_user()          - requires auth (profile, history routes)
+                     get_optional_user()         - optional auth (all analysis routes)
                      Returns {"id": user-uuid, "email": "...", "role": "..."}
 
 GET/PUT /api/profile  -> routers/profile.py  : read/update user profile (birth info, nickname)
@@ -117,9 +122,13 @@ GET /api/history      -> routers/history.py  : list analysis history for current
 GET /api/history/{id} -> routers/history.py  : get single history detail
 ```
 
+### Anonymous Usage Logging
+
+`services/usage_log.py` — `log_anonymous_usage(request, analysis_type, category=None)`. Called by all 4 analysis routers when `user is None`. Writes to `anonymous_usage_logs` table (id, analysis_type, category, ip_address, created_at). IP extracted from `X-Forwarded-For` header or `request.client.host`. Uses `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS.
+
 ### Hero Matching System
 
-`services/hero_match.py` contains 15 Korean historical figures (세종대왕, 이순신, 허준, etc.) with trait vectors (wealth, career, leadership, wisdom, creativity, etc.). Matching uses weighted cosine-like similarity between user traits extracted from face/saju analysis and hero trait profiles.
+`services/hero_match.py` contains 15 Korean historical figures (세종대왕, 이순신, 허준, etc.) with trait vectors (wealth, career, leadership, wisdom, creativity, etc.). Matching uses weighted cosine-like similarity between user traits extracted from face/saju/tarot analysis and hero trait profiles. Combined analysis weights: face 30% + saju 40% + tarot 30%.
 
 ### ML Training Pipeline
 
@@ -136,17 +145,17 @@ crawl.py -> extract_faces.py -> extract_ratios.py -> auto_label.py -> train.py -
 /login, /signup        : Supabase Auth email/password
 /face                  : face photo upload
 /face/result           : face analysis results (reads sessionStorage)
-/saju                  : birth datetime input
+/saju                  : birth datetime input (프로필에서 생년월일 자동 입력, .maybeSingle() 사용)
 /saju/result           : saju analysis results
 /tarot                 : tarot category selection + card draw
 /tarot/result          : tarot analysis results (3-card spread display)
 /combined              : photo + birth input + tarot category selection
 /combined/result       : combined analysis results (관상+사주+타로)
-/mypage                : profile edit + history list
-/mypage/history/[id]   : single history detail view
+/mypage                : profile edit + history list (AuthGuard)
+/mypage/history/[id]   : single history detail view (AuthGuard)
 ```
 
-Results pass between upload and result pages via **sessionStorage** (`analysisResult`, `uploadedImage`). No server-side state for results display. PDF export uses `html2canvas-pro` + `jspdf`.
+Results pass between upload and result pages via **sessionStorage** (`analysisResult`, `uploadedImage`, `sajuResult`, `heroMatch`). No server-side state for results display. PDF export uses `html2canvas-pro` + `jspdf`.
 
 ### Key Design Decisions
 
@@ -155,6 +164,7 @@ Results pass between upload and result pages via **sessionStorage** (`analysisRe
 - **.env lives at project root** and is loaded by `dotenv` in `main.py` and individual services. Backend reads it via `Path(__file__).parent.parent / ".env"`.
 - **ML scripts use hardcoded absolute paths** (`D:\dev\physiognomy`). Adjust if working from a different location.
 - **Model checkpoints (.joblib) are gitignored.** The `ml/checkpoints/` files must be generated locally by running `train.py`.
+- **Supabase `.single()` vs `.maybeSingle()`**: Use `.maybeSingle()` on Supabase queries where 0 rows is a valid state (e.g., profile pre-fill on non-auth pages). `.single()` returns 406 when no rows match.
 
 ### Supabase Schema
 
@@ -162,6 +172,7 @@ Defined in `supabase/migrations/`:
 
 - **profiles** — extends `auth.users` (id, email, nickname, birth info, gender). RLS: own rows only. Auto-created on signup via trigger.
 - **analysis_history** — stores analysis results (user_id, type [face/saju/combined/tarot], input_data JSONB, result_data JSONB, image_url). RLS: own rows only. `002_tarot_type.sql` added 'tarot' to the type CHECK constraint.
+- **anonymous_usage_logs** — non-auth 분석 요청 로그 (id, analysis_type, category, ip_address, created_at). RLS 없음, service_role key로 INSERT. `003_anonymous_usage_logs.sql`.
 - **face-images** storage bucket — private, RLS enforces user-folder isolation (`{user_id}/filename`).
 - **physiognomy_knowledge** — RAG knowledge with pgvector embeddings. Includes physiognomy, saju, and tarot knowledge (62 tarot entries added via `embed_tarot_only.py`).
 
@@ -174,6 +185,7 @@ Defined in root `.env` (see `.env.example`):
 | `OPENAI_API_KEY`                | Backend  | OpenAI embeddings (text-embedding-3-small) + LLM (gpt-4o-mini) |
 | `SUPABASE_URL`                  | Backend  | Supabase project URL for pgvector RAG, storage, history        |
 | `SUPABASE_KEY`                  | Backend  | Supabase anon key                                              |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Backend  | Service role key — RLS 우회 (이력 저장, 비회원 로그 INSERT)    |
 | `SUPABASE_JWT_SECRET`           | Backend  | JWT secret (Settings > API) for auth middleware                |
 | `NEXT_PUBLIC_API_URL`           | Frontend | Backend URL (default: `http://localhost:13351`)                |
 | `NEXT_PUBLIC_SUPABASE_URL`      | Frontend | Supabase project URL for client-side auth                      |
