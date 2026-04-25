@@ -16,7 +16,7 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your-anon-key
 ```
 
-### 2. 도구 설치
+### 2. 도구 설치 
 
 - [ngrok](https://ngrok.com/) 설치 후 인증
   ```bash
